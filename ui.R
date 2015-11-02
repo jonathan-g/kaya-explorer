@@ -6,25 +6,52 @@
 #
 
 library(shiny)
+library(ggvis)
 
 shinyUI(fluidPage(
 
   # Application title
-  titlePanel("Old Faithful Geyser Data"),
+  titlePanel("Decarbonization Homework"),
 
   # Sidebar with a slider input for number of bins
   sidebarLayout(
     sidebarPanel(
-      sliderInput("bins",
-                  "Number of bins:",
-                  min = 1,
-                  max = 50,
-                  value = 30)
+      radioButtons("analysis", "Analysis:",
+                   c("Top-down" = 'top.down', "Bottom-up" = 'bottom.up'),
+                   selected = 'bottom.up'),
+      br(),
+      selectInput('country', h3("Country"), choices = NULL),
+      numericInput('ref_yr', 'Reference Year', step = 1, value = 1990),
+      numericInput('target_yr', 'Target Year', step = 1, value = 2050),
+      numericInput('target_reduc', 'Emissions reduction (%)', min=0, max=100,
+                   value = 80),
+      br(),
+      htmlOutput('trend_title'),
+      tableOutput('trend_table'),
+      htmlOutput('target_emissions')
     ),
-
-    # Show a plot of the generated distribution
     mainPanel(
-      plotOutput("distPlot")
+      tabsetPanel(type="tabs",
+                  tabPanel("Trends", "Historical Trends",
+                           selectInput('trend_variable', 'Variable',
+                                       choices = c('P', 'g', 'e', 'f', 'ef', 'G', 'E', 'F'),
+                                       selected = 1),
+                           fluidRow(
+                             column(6,
+                             ggvisOutput('trend_plot_ln')),
+                             column(6,
+                             ggvisOutput('trend_plot'))
+                             )
+                  ),
+                  tabPanel("Historical", tableOutput("historical_table")),
+                  tabPanel("Projected", tableOutput("projections")),
+                  tabPanel("Implied Decarbonization",
+                           fluidRow(
+                             column(6,
+                                    h3('foo')
+                           )
+                           ))
+      )
     )
   )
 ))

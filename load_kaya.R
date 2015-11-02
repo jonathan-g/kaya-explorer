@@ -78,7 +78,23 @@ load_kaya <- function() {
     mutate(energy.pc = energy.consumption / population,
            carbon.pc = carbon.emissions / population,
            e = energy.pc / gdp.pc,
-           f = carbon.emissions / energy.consumption)
+           f = carbon.emissions / energy.consumption,
+           country = factor(country))
+
+  exclude_countries <- c('Other Middle East')
+  energy.intensity <- filter(energy.intensity, ! country %in% exclude_countries)
+
+  world <- c('World')
+  regions <- c('Africa', 'Asia Pacific', 'Middle East', 'Outher Middle East',
+               'North America')
+
+  energy.intensity$geography <- 'country'
+  energy.intensity$geography[energy.intensity$country %in% regions] <- 'region'
+  energy.intensity$geography[energy.intensity$country %in% world] <- 'world'
+  energy.intensity$geography <- ordered(energy.intensity$geography,
+                                        levels = c('country', 'region', 'world'))
+
+  energy.intensity <- arrange(energy.intensity, desc(geography), country, year)
 
   #
   # P = population in billions
@@ -90,12 +106,23 @@ load_kaya <- function() {
   # e = quads per trillion dollars
   # f = million tons of carbon per quad
   #
-  kaya <- energy.intensity %>% select(year, country,
+  kaya <- energy.intensity %>% select(year, country, geography,
                                       P = population,
                                       g = gdp.pc,
                                       e, f,
                                       E = energy.consumption,
                                       F = carbon.emissions) %>%
     mutate(ef = e * f, G = P * g)
+
   list(kaya = kaya, data = energy.intensity)
 }
+
+export_kaya <- function(kaya, country) {
+  x <- country
+  data <- kaya %>% filter(country == x) %>%
+    select(Year = year, P,G,E,F) %>%
+    mutate(P = P * 1E+6, G = G * 1E+6, F = F * 44 / 12)
+  filename <- paste(gsub(" +", "_", country), '.csv')
+  write.csv(data, file = filename, row.names=FALSE)
+}
+
