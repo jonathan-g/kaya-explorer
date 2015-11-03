@@ -13,8 +13,13 @@ library(tidyr)
 
 source('load_kaya.R')
 
-data <- load_kaya()
-kaya <- data$kaya
+mass.c <- 12
+mass.co2 <- 44
+
+c.to.co2 <- function(x) {x * mass.co2 / mass.c}
+co2.to.c <- function(x) {x * mass.c / mass.co2}
+
+kaya <- load_kaya()$kaya %>% mutate(F = c.to.co2(F), f = c.to.co2(f), ef = c.to.co2(ef))
 
 kaya$id <- seq_len(nrow(kaya))
 
@@ -44,6 +49,12 @@ kaya_labels <- data.frame(
             'Carbon intensity', 'Carbon intensity of economy')
 )
 
+
+add_units <- function(variables) {
+  suppressWarnings(str_c(variables, ' (', kaya_labels$unit[pmatch(variables, kaya_labels$variable)], ')'))
+}
+
+
 shinyServer(function(input, output, session) {
   observe({
     updateSelectInput(session, 'country', choices = unique(countries))
@@ -55,81 +66,166 @@ shinyServer(function(input, output, session) {
     updateNumericInput(session, 'target_yr', min = max(kaya$year),
                        step = 1, value = v)
   })
-
+  
   kaya_subset <- reactive({
     ctry <- input$country
-
+    if (! ctry %in% kaya$country)
+      ctry <- 'World'
     ks <- kaya  %>% filter(country == ctry) %>% arrange(year)
     ks
   })
-
+  
+  current_year <- reactive({
+    max(kaya_subset()$year, na.rm = T)
+  })
+  
+  history_start <- reactive({
+    min(kaya_subset()$year, na.rm = T)
+  })
+  
+  history_stop <- reactive({
+    max(kaya_subset()$year)
+  })
+  
+  ref_emissions <- reactive({
+    ref_yr <- input$ref_yr
+    ref_emissions <- kaya_subset() %>% filter(year == ref_yr) %>% select(F) %>% unlist()
+  })
+  
+  target_emissions <- reactive({
+    ref_emissions() * (1. - input$target_reduc / 100.)
+  })
+  
   trends <- reactive({
     ks <- kaya_subset()
     vars <- c('P','g', 'e', 'f', 'ef', 'G', 'E', 'F')
     t <- data.frame(variable = vars, 'growth.rate' = NA)
     if (nrow(ks) > 0) {
       t$growth.rate <- unlist(lapply(vars,
-                       function(v) {
-                         f <- substitute(log(x) ~ year, list(x = as.symbol(v)))
-                         mdl <- lm(f, data = ks, na.action = na.exclude)
-                         growth <- coef(mdl)['year']
-                       }))
+                                     function(v) {
+                                       f <- substitute(log(x) ~ year, list(x = as.symbol(v)))
+                                       mdl <- lm(f, data = ks, na.action = na.exclude)
+                                       growth <- coef(mdl)['year']
+                                     }))
     }
-  t
-})
-
+    t
+  })
+  
+  forecast <- reactive({
+    t <- trends() %>% mutate(variable = ordered(variable, levels = variable))
+    current_yr <- current_year()
+    ks <- kaya_subset() %>% filter(year == current_yr) %>%
+      select_(.dots = as.character(t$variable)) %>%
+      gather(key = variable, value = current)
+    t <- merge(t, ks)
+    t <- mutate(t, projected = current * exp((input$target_yr - current_yr) * growth.rate)) %>%
+      arrange(variable)
+    t
+  })
+  
+  output$trend_display <- renderText({
+    v <- input$trend_variable
+    t <- filter(trends(), variable == v)
+    paste0('Growth rate of ', v, ' = ', formatC(t$growth.rate * 100, digits = 2, format = 'f'), '% per year')
+  })
+  
   output$historical_table <- renderTable({
     ks <- kaya_subset() %>% select(year, P, g, e, f, ef, G, E, F)
     cn <- colnames(ks)
-    labs <- kaya_labels %>% mutate(label = str_c(long, ' (', unit, ')')) %>% select(variable, label)
+    labs <- kaya_labels %>% mutate(label = suppressWarnings(str_c(long, ' (', unit, ')'))) %>% select(variable, label)
     colnames(ks) <- c('Year', labs$label[pmatch(cn[-1], labs$variable)])
     ks
   },
-    digits = c(0, 0, 2, 2, 2, 2, 1, 1, 1, 0),
-    include.rownames = FALSE
+  digits = c(0, 0, 2, 2, 2, 2, 1, 1, 1, 0),
+  include.rownames = FALSE
   )
-
+  
+  output$policy_goal <- renderText({
+    as.character(span(strong('Policy goal: '), input$target_yr, ' emissions ', input$target_reduc, '% below ', input$ref_yr)) 
+  })
+  
   output$trend_title <- renderText({
     title <- c(top.down = "Top Down", bottom.up = "Bottom up")[input$analysis]
-    as.character(h3(title))
-    })
-
+    as.character(h4(strong(title)))
+  })
+  
   output$trend_table <- renderTable({
-    t <- trends()
-    current_year <- max(kaya$year)
-    t$variable <- ordered(t$variable, levels = t$variable)
-    ks <- kaya_subset() %>% filter(year == current_year) %>%
-                    select_(.dots = as.character(t$variable)) %>%
-                    gather(key = variable, value = current)
-    t <- merge(t, ks)
-    t <- mutate(t, growth.pct = str_c(formatC(growth.rate * 100, digits=2, format='f'), '%'),
-                projected = current * exp((input$target_yr - current_year) * growth.rate)) %>%
-      mutate(current = formatC(current, digits = 3, big.mark = ',', format = 'fg'),
-             projected = formatC(projected, digits = 3, big.mark = ',', format = 'fg')) %>%
+    fcast <- forecast()
+    current_yr <- current_year()
+    fcast <- fcast %>% mutate(growth.pct = str_c(formatC(growth.rate * 100, digits=2, format='f'), '%'),
+                              current = formatC(current, digits = 3, big.mark = ',', format = 'fg'),
+                              projected = formatC(projected, digits = 3, big.mark = ',', format = 'fg')) %>%
       select(variable, growth.pct, current, projected) %>%
-      arrange(variable) %>%
-      mutate(variable = str_c(variable, ' (',
-                              kaya_labels$unit[pmatch(variable, kaya_labels$variable)], ')'))
-    names(t) <- c('', 'Growth Rate', paste0('Current (', current_year, ')'),
-                  paste0('Projected (', input$target_yr, ')'))
-    t
-  }, align = 'ccrrr', include.rownames = FALSE)
-
-  output$target_emissions <- renderText({
-    ref_year <- input$ref_yr
-    target_year <- input$target_yr
+      mutate(variable = add_units(variable))
+    rownames(fcast) <- fcast$variable
+    fcast <- fcast %>% select(-variable)
+    names(fcast) <- c('Growth Rate', paste0('Current (', current_yr, ')'), paste0('Projected (', input$target_yr, ')'))
+    fcast
+  }, 
+  align = 'crrr')
+  
+  output$step_1 <- renderText({
+    paste0(strong("Step 1: "), "write down current (",
+           current_year(), ") and projected ", input$target_yr, " values for ",
+           em('P'), ", ", em('g'), ", ", em('e'), ", and ", em('f'), ".")
+  })
+  
+  output$step_1_table <- renderTable({
+    target_yr <- input$target_yr
+    current_yr <- current_year()
+    fcast <- forecast() %>% filter(variable %in% c('P', 'g', 'e', 'f')) %>%
+      mutate(variable = add_units(variable), current = formatC(current, digits = 3, big.mark = ',', format = 'fg'),
+             projected = formatC(projected, digits = 3, big.mark = ',', format = 'fg'))
+    rownames(fcast) <- fcast$variable
+    fcast <- fcast %>% select(current, projected)
+    names(fcast) <- suppressWarnings(str_c(c("Current", "Projected"), " (", c(current_yr, target_yr), ")"))
+    message(paste(colnames(fcast), collapse = ', '))
+    fcast
+  }, align=c('c','r', 'r'))
+  
+  output$step_2 <- renderText({
+    paste0(strong("Step 2: "), "Multiply the variables together to get ", em("F"), " for each year.")
+  })
+  
+  output$step_2_table <- renderTable({
+    target_yr <- input$target_yr
+    current_yr <- current_year()
+    fcast <- forecast() %>% filter(variable %in% c('F')) %>%
+      mutate(variable = add_units(variable), current = formatC(current, digits = 3, big.mark = ',', format = 'fg'),
+             projected = formatC(projected, digits = 3, big.mark = ',', format = 'fg'))
+    rownames(fcast) <- fcast$variable
+    fcast <- fcast %>% select(current, projected)
+    names(fcast) <- suppressWarnings(str_c(c("Current", "Projected"), " (", c(current_yr, target_yr), ")"))
+    message(paste(colnames(fcast), collapse = ', '))
+    fcast
+  }, align=c('c','r', 'r'))
+  
+  output$step_3 <- renderText({
+    ref_yr <- input$ref_yr
+    target_yr <- input$target_yr
     target_reduc <- input$target_reduc
-    ref_emissions <- kaya_subset() %>% filter(year == ref_year) %>%
-      select_('F') %>% unlist()
-    target_emissions <- ref_emissions * (1 - target_reduc / 100)
-    target = formatC(target_emissions, digits = 3, big.mark = ',', format = 'fg')
-    ref = formatC(ref_emissions, digits = 3, big.mark = ',', format = 'fg')
-    paste0(
-      as.character(h4(paste0(ref_year, ' emissions = ', ref, ' MMT CO2'))),
-      as.character(h4(target_year, ' target:',
-                      target_reduc, '% reduction = ', target, ' MMT')))
+    paste0(strong("Step 3: "), "Look up emissions for ", ref_yr, " and calculate the target emissions (", target_reduc, "% less) for ", target_yr, ".")
   })
 
+  output$step_3_table <- renderTable({
+    ref_yr <- input$ref_yr
+    target_yr <- input$target_yr
+
+    df <- data.frame(ref = ref_emissions(), target = target_emissions())
+    names(df) <- str_c(c("Emissions in ", "Target emissions in "), c(ref_yr, target_yr))
+    df
+  }, include.rownames = FALSE)
+  
+  
+  output$target_emissions <- renderText({
+    target = formatC(target_emissions(), digits = 3, big.mark = ',', format = 'fg')
+    ref = formatC(ref_emissions(), digits = 3, big.mark = ',', format = 'fg')
+    paste0(
+      as.character(h4(paste0(input$ref_yr, ' emissions = ', ref, ' MMT CO2'))),
+      as.character(h4(input$target_yr, ' target:',
+                      input$target_reduc, '% reduction = ', target, ' MMT')))
+  })
+  
   trend_tooltip <- function(x) {
     if (is.null(x)) return(NULL)
     if (is.null(x$id)) return(NULL)
@@ -140,13 +236,17 @@ shinyServer(function(input, output, session) {
     pt = r[v]
     paste0('<b>', year, ": ", v, " = ", formatC(as.numeric(pt), digits=2, format='f'), "</b>")
   }
-
+  
   tp <- reactive({
     xvar_name <- 'Year'
     v <- input$trend_variable
     yvar_name <- with(kaya_labels[kaya_labels$variable == v,], paste0(variable, ' (', unit, ')'))
     yvar <- prop("y", as.symbol(input$trend_variable))
-    kaya_subset %>%
+    if (is.na(history_start()))
+      x_tics <- NULL
+    else
+      x_tics <- seq(10 * round(history_start() / 10), 10 * round(history_stop() / 10), 10)
+    plot <- kaya_subset %>%
       ggvis(x = ~year, y = yvar) %>%
       layer_points(size := 15, size.hover := 50,
                    fillOpacity := 1, fillOpacity.hover := 1,
@@ -155,11 +255,12 @@ shinyServer(function(input, output, session) {
       layer_lines(strokeWidth := 2, stroke := "darkred") %>%
       add_tooltip(trend_tooltip, "hover") %>%
       add_axis("x", title = xvar_name, format="4d",
-               values = seq(10 * round(min(kaya$year / 10)), 10 * round(max(kaya$year / 10)), 10)) %>%
+               values = x_tics) %>%
       add_axis("y", title = as.character(yvar_name)) %>%
       set_options(width="auto", height="auto", resizable = TRUE)
+    plot
   })
-
+  
   trend_model <- reactive({
     var <- input$trend_variable
     k <- kaya_subset()
@@ -173,14 +274,18 @@ shinyServer(function(input, output, session) {
     }
     trend
   })
-
+  
   tp %>% bind_shiny("trend_plot", session = session)
-
+  
   tpl <- reactive({
     xvar_name <- 'Year'
     v <- input$trend_variable
     yvar_name <- with(kaya_labels[kaya_labels$variable == v,], paste0('log(', variable, ')'))
     yvar <- prop("y", substitute(log(x), list(x = as.symbol(input$trend_variable))))
+    if (is.na(history_start()))
+      x_tics <- NULL
+    else
+      x_tics <- seq(10 * round(history_start() / 10), 10 * round(history_stop() / 10), 10)
     plot <- kaya_subset %>%
       ggvis(x = ~year, y = yvar) %>%
       layer_points(size := 15, size.hover := 50,
@@ -190,14 +295,12 @@ shinyServer(function(input, output, session) {
       layer_lines(strokeWidth := 2, stroke := "darkred") %>%
       layer_model_predictions(model = "lm") %>%
       add_tooltip(trend_tooltip, "hover") %>%
-      add_axis("x", title = xvar_name, format="4d",
-               values = seq(10 * round(min(kaya$year / 10)), 10 * round(max(kaya$year / 10)), 10)
-               ) %>%
+      add_axis("x", title = xvar_name, format="4d", values = x_tics) %>%
       add_axis("y", title = yvar_name) %>%
       set_options(width="auto", height="auto", resizable = TRUE)
     plot
   })
-
+  
   tpl %>% bind_shiny("trend_plot_ln", session = session)
-
+  
 })
