@@ -11,6 +11,7 @@ library(stringr)
 library(dplyr)
 library(tidyr)
 library(rtable)
+library(RColorBrewer)
 
 source('load_kaya.R')
 
@@ -150,6 +151,49 @@ shinyServer(function(input, output, session) {
     t <- mutate(t, projected = current * exp((input$target_yr - current_yr) * growth.rate)) %>%
       arrange(variable)
     t
+  })
+
+  implied_decarb_rate <- reactive({
+    ks <- kaya_subset() %>% mutate(cat = 'Historical')
+    fcast <- forecast()
+    target_em <- target_emissions()
+    target_yr <- input$target_yr
+    current_yr <- current_year()
+    delta_yr <- target_yr - current_yr
+    current_em <- fcast$current[fcast$variable == 'F']
+    rate_G <- fcast$growth.rate[fcast$variable == 'G']
+
+    rate = log(target_em / current_em) / delta_yr - rate_G
+
+    message("target_em = ", prt(target_em,0), ", rate_G = ",
+            prt(rate_G * 100, 2), "%, target ef rate  = ",
+            prt(rate * 100,2), "%")
+    rate
+  })
+
+  implied_decarb <- reactive({
+    ks <- kaya_subset() %>% select(year, ef) %>% mutate(cat = 'Historical')
+    fcast <- forecast()
+    target_yr <- input$target_yr
+    current_yr <- current_year()
+    current_ef <- fcast$current[fcast$variable == 'ef']
+    trend_ef <- fcast$growth.rate[fcast$variable == 'ef']
+
+    rate <- implied_decarb_rate()
+
+    message("implied decarb rate = ", prt(100 * rate, 2), "%")
+
+    mdl <- lm(log(ef) ~ year, data = filter(ks, year >= input$trend_start_year))
+
+    extrap <- data.frame(year = seq(history_start(), target_yr), cat = "Historical Trend")
+    extrap$ef <- exp(predict(mdl, newdata = extrap))
+
+    bottom_up <- data.frame(year = seq(current_yr, target_yr))
+    bottom_up <- bottom_up %>% mutate( ef = current_ef * exp(rate * (year - current_yr)),
+              cat = 'Bottom-up')
+
+    ks <- bind_rows(ks, extrap, bottom_up) %>% mutate(id = row_number())
+    ks
   })
 
   output$trend_display <- renderText({
@@ -412,7 +456,10 @@ shinyServer(function(input, output, session) {
       elements <- elements %>%
         tagAppendChildren(br(),
                           span(paste0(prt(rate * 100, 2), '% - (', prt(tP * 100,2), '% + ',
-                                      prt(tg * 100,2), '%) = ', prt(t.ef.proj * 100,2), '%'),
+                                      prt(tg * 100,2), '%) = ', prt(t.ef.proj * 100,2), '% per year'),
+                               br(),
+                               HTML("For comparison, the historical trend for <i>ef</i> is ",
+                                    prt(t.ef.hist * 100, 2), "% per year."),
                                style=paste0("color:",answer.fg,";font-weight:bold;"))
         )
     }
@@ -448,6 +495,19 @@ shinyServer(function(input, output, session) {
     pt = r[v]
     paste0('<b>', year, ": ", v, " = ", prt(as.numeric(pt), 2), "</b>")
   }
+
+  decarb_tooltip <- function(x) {
+    message("decarb_tooltip: x = ", paste(names(x), " = ", x, collapse = ', '))
+    if (is.null(x)) return(NULL)
+    if (is.null(x$id)) return(NULL)
+    df <- isolate(implied_decarb())
+    r = df[df$id == x$id,]
+    year = r$year
+    pt = r$ef
+    cat = r$cat
+    paste0('<b>', year, ": ef(", cat, ")  = ", prt(as.numeric(pt), 2), "</b>")
+  }
+
 
   tp <- reactive({
     xvar_name <- 'Year'
@@ -537,5 +597,37 @@ shinyServer(function(input, output, session) {
   output$trend_plot_title <- renderText({
     kaya_labels$long[kaya_labels$variable == input$trend_variable]
   })
+
+  decarb_plot <- reactive({
+    message("Starting decarb_plot")
+    xvar_name <- 'Year'
+    yvar_name <- 'CO<sub>2</sub> intensity (tonnes / $1000 GDP)'
+
+    if (is.na(history_start())) {
+      x_tics <- NULL
+    }
+    else {
+      x_tics <- seq(10 * round(history_start() / 10),
+                    10 * round(input$target_yr / 10), 10)
+    }
+    plot <- implied_decarb %>%
+      ggvis(x = ~year, y = ~ef) %>%
+      group_by(cat) %>%
+      layer_lines(strokeWidth := 2, stroke = ~cat) %>%
+      ungroup() %>%
+      layer_points(size := 6, stroke = ~cat, fill = ~cat, key := ~id) %>%
+      add_tooltip(decarb_tooltip, "hover") %>%
+      add_axis("x", title = xvar_name, format="4d") %>%
+      scale_numeric("x", nice=TRUE) %>%
+      add_axis("y", title = yvar_name) %>%
+      scale_numeric("y", nice=TRUE, zero=TRUE) %>%
+      scale_nominal("stroke", range = brewer.pal(3, "Dark2"), sort = TRUE) %>%
+      scale_nominal("fill", range = brewer.pal(3, "Dark2"), sort = TRUE) %>%
+      set_options(width="auto", height="auto", resizable = FALSE)
+    message("plot created")
+    plot
+  })
+
+  decarb_plot %>% bind_shiny("implied_decarb_plot", session = session)
 
 })

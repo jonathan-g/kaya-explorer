@@ -82,11 +82,8 @@ shinyUI(fluidPage(
                            htmlOutput('step_6')
                   ),
                   tabPanel("Implied Decarbonization",
-                           fluidRow(
-                             column(6,
-                                    h3('foo')
-                             )
-                           )),
+                           ggvisOutput('implied_decarb_plot')
+                           ),
                   tabPanel("Historical", tableOutput("historical_table"))
       )
     )
