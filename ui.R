@@ -21,7 +21,7 @@ shinyUI(fluidPage(
       numericInput('target_yr', 'Target year', step = 1, value = 2050),
       numericInput('target_reduc', 'Emissions reduction (%)', min=0, max=100,
                    value = 80),
-      numericInput('ref_yr', 'Reference year', step = 1, value = 1990),
+      numericInput('ref_yr', 'Reference year for emissions reduction', step = 1, value = 1990),
       numericInput('trend_start_year', 'Calculate trends starting in',
                    step = 1, value = 1980),
       htmlOutput('policy_goal'),
