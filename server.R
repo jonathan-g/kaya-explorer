@@ -619,7 +619,7 @@ shinyServer(function(input, output, session) {
   decarb_plot <- reactive({
     message("Starting decarb_plot")
     xvar_name <- 'Year'
-    yvar_name <- 'CO<sub>2</sub> intensity (tonnes / $1000 GDP)'
+    yvar_name <- 'CO2 intensity (tonnes / $1000 GDP)'
 
     if (is.na(history_start())) {
       x_tics <- NULL
@@ -638,7 +638,7 @@ shinyServer(function(input, output, session) {
       add_axis("x", title = xvar_name, format="4d") %>%
       scale_numeric("x", nice=TRUE) %>%
       add_axis("y", title = yvar_name) %>%
-      scale_numeric("y", nice=TRUE, zero=TRUE) %>%
+      scale_numeric("y", nice=FALSE, zero=TRUE) %>%
       scale_nominal("stroke", range = brewer.pal(3, "Dark2"), sort = TRUE) %>%
       scale_nominal("fill", range = brewer.pal(3, "Dark2"), sort = TRUE) %>%
       set_options(width="auto", height="auto", resizable = FALSE)
