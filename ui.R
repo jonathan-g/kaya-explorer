@@ -17,10 +17,12 @@ shinyUI(fluidPage(
   sidebarLayout(
     sidebarPanel(
       selectInput('country', "Country", choices = NULL),
-      numericInput('target_yr', 'Target Year', step = 1, value = 2050),
+      numericInput('target_yr', 'Target year', step = 1, value = 2050),
       numericInput('target_reduc', 'Emissions reduction (%)', min=0, max=100,
                    value = 80),
-      numericInput('ref_yr', 'Reference Year', step = 1, value = 1990),
+      numericInput('ref_yr', 'Reference year', step = 1, value = 1990),
+      numericInput('trend_start_year', 'Calculate trends starting in',
+                   step = 1, value = 1980),
       htmlOutput('policy_goal'),
       br(),
       radioButtons("analysis", "Analysis:",
@@ -33,29 +35,48 @@ shinyUI(fluidPage(
     ),
     mainPanel(
       tabsetPanel(type="tabs",
-                  tabPanel("Trends", "Historical Trends",
-                           inputPanel(
-                            selectInput('trend_variable', 'Variable',
-                                       choices = c('P', 'g', 'e', 'f', 'ef', 'G', 'E', 'F'),
-                                       selected = 1),
-                  textOutput('trend_display', inline = TRUE)
+                  tabPanel("Trends", h3("Historical Trends"),
+                           fluidRow(
+                             column(2,
+                             selectInput('trend_variable', 'Variable',
+                                         choices = c('P', 'g', 'e', 'f', 'ef', 'G', 'E', 'F'),
+                                         selected = 1)),
+                             column(10,
+                             br(),
+                             textOutput('trend_display', inline = TRUE)
+                             )
                            ),
-                                           
+
                            fluidRow(
                              column(6,
-                             ggvisOutput('trend_plot_ln')),
+                                    span(h4(strong(textOutput('trend_plot_ln_title'))),
+                                         style="text-align:center;"),
+                                    div(
+                                    ggvisOutput('trend_plot_ln')
+                                    )
+                             ),
                              column(6,
-                             ggvisOutput('trend_plot'))
+                                    span(h4(strong(textOutput('trend_plot_title'))),
+                                         style="text-align:center;"),
+                                    div(
+                                    ggvisOutput('trend_plot')
+                                    )
                              )
+                           )
                   ),
-                  tabPanel("Calculations", "Calcuating Implied Decarbonization",
+                  tabPanel("Calculations", h3("Calcuating Implied Decarbonization"),
+                           br(),
+                           checkboxInput('calc_show_answers', "Show answers", value = FALSE),
                            htmlOutput('step_1'),
                            tableOutput('step_1_table'),
                            htmlOutput('step_2'),
                            tableOutput('step_2_table'),
                            htmlOutput('step_3'),
-                           tableOutput('step_3_table')
-                           ),
+                           tableOutput('step_3_table'),
+                           htmlOutput('step_4'),
+                           htmlOutput('step_5'),
+                           tableOutput('step_5_table')
+                  ),
                   tabPanel("Implied Decarbonization",
                            fluidRow(
                              column(6,
