@@ -27,7 +27,7 @@ shinyUI(fluidPage(
       htmlOutput('policy_goal'),
       br(),
       radioButtons("analysis", "Analysis:",
-#                   c("Bottom-up" = 'bottom.up', "Top-down" = 'top.down'),
+                   #                   c("Bottom-up" = 'bottom.up', "Top-down" = 'top.down'),
                    c("Bottom-up" = 'bottom.up'),
                    inline = TRUE,
                    selected = 'bottom.up'),
@@ -37,15 +37,16 @@ shinyUI(fluidPage(
     ),
     mainPanel(
       tabsetPanel(type="tabs",
-                  tabPanel("Trends", h3("Historical Trends"),
+                  tabPanel("Trends",
+                           h3(textOutput("tab_title_trend", inline = TRUE)),
                            fluidRow(
                              column(2,
-                             selectInput('trend_variable', 'Variable',
-                                         choices = c('P', 'g', 'e', 'f', 'ef', 'G', 'E', 'F'),
-                                         selected = 1)),
+                                    selectInput('trend_variable', 'Variable',
+                                                choices = c('P', 'g', 'e', 'f', 'ef', 'G', 'E', 'F'),
+                                                selected = 1)),
                              column(10,
-                             br(),
-                             htmlOutput('trend_display', inline = TRUE)
+                                    br(),
+                                    htmlOutput('trend_display', inline = TRUE)
                              )
                            ),
 
@@ -54,19 +55,20 @@ shinyUI(fluidPage(
                                     span(h4(strong(textOutput('trend_plot_ln_title'))),
                                          style="text-align:center;"),
                                     div(
-                                    ggvisOutput('trend_plot_ln')
+                                      ggvisOutput('trend_plot_ln')
                                     )
                              ),
                              column(6,
                                     span(h4(strong(textOutput('trend_plot_title'))),
                                          style="text-align:center;"),
                                     div(
-                                    ggvisOutput('trend_plot')
+                                      ggvisOutput('trend_plot')
                                     )
                              )
                            )
                   ),
-                  tabPanel("Calculations", h3("Calcuating Implied Decarbonization"),
+                  tabPanel("Calculations",
+                           h3(textOutput('tab_title_calc')),
                            br(),
                            checkboxInput('calc_show_answers', "Show answers", value = FALSE),
                            htmlOutput('step_1'),
@@ -82,9 +84,17 @@ shinyUI(fluidPage(
                            htmlOutput('step_6')
                   ),
                   tabPanel("Implied Decarbonization",
-                           ggvisOutput('implied_decarb_plot')
-                           ),
-                  tabPanel("Historical", tableOutput("historical_table"))
+                           h3(textOutput('tab_title_decarb')),
+                           div(
+                             ggvisOutput('implied_decarb_plot')
+                           )
+                  ),
+                  tabPanel("Historical",
+                           h3(textOutput('tab_title_historical')),
+                           div(
+                             tableOutput("historical_table")
+                           )
+                  )
       )
     )
   )

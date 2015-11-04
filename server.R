@@ -102,6 +102,7 @@ shinyServer(function(input, output, session) {
     v <- min(max(input$trend_start_year, ks.min.yr), ks.max.yr)
     updateNumericInput(session, 'trend_start_year',
                        min = ks.min.yr, max = ks.max.yr, step = 1, value = v)
+
   })
 
   current_year <- reactive({
@@ -230,6 +231,23 @@ shinyServer(function(input, output, session) {
     title <- c(top.down = "Top Down", bottom.up = "Bottom up")[input$analysis]
     as.character(h4(strong(title)))
   })
+
+  output$tab_title_trend <- renderText({
+    paste("Historical Trends for", input$country)
+  })
+
+  output$tab_title_calc <- renderText({
+    paste("Calcuating Implied Decarbonization for", input$country)
+  })
+
+  output$tab_title_decarb <- renderText({
+    paste("Implied Decarbonization for", input$country)
+  })
+
+  output$tab_title_historical <- renderText({
+    paste("Historical Data for", input$country)
+  })
+
 
   output$trend_table <- renderFlexTable({
     fcast <- forecast()
