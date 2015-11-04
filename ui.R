@@ -12,6 +12,7 @@ shinyUI(fluidPage(
 
   # Application title
   titlePanel("Decarbonization Homework"),
+  withMathJax(),
 
   # Sidebar with a slider input for number of bins
   sidebarLayout(
@@ -26,7 +27,8 @@ shinyUI(fluidPage(
       htmlOutput('policy_goal'),
       br(),
       radioButtons("analysis", "Analysis:",
-                   c("Bottom-up" = 'bottom.up', "Top-down" = 'top.down'),
+#                   c("Bottom-up" = 'bottom.up', "Top-down" = 'top.down'),
+                   c("Bottom-up" = 'bottom.up'),
                    inline = TRUE,
                    selected = 'bottom.up'),
       htmlOutput('trend_title'),
@@ -43,7 +45,7 @@ shinyUI(fluidPage(
                                          selected = 1)),
                              column(10,
                              br(),
-                             textOutput('trend_display', inline = TRUE)
+                             htmlOutput('trend_display', inline = TRUE)
                              )
                            ),
 
@@ -70,12 +72,14 @@ shinyUI(fluidPage(
                            htmlOutput('step_1'),
                            tableOutput('step_1_table'),
                            htmlOutput('step_2'),
+                           uiOutput('step_2_formula'),
                            tableOutput('step_2_table'),
                            htmlOutput('step_3'),
                            tableOutput('step_3_table'),
                            htmlOutput('step_4'),
+                           tableOutput('step_4_table'),
                            htmlOutput('step_5'),
-                           tableOutput('step_5_table')
+                           htmlOutput('step_6')
                   ),
                   tabPanel("Implied Decarbonization",
                            fluidRow(

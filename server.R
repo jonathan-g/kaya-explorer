@@ -21,7 +21,7 @@ c.to.co2 <- function(x) {x * mass.co2 / mass.c}
 co2.to.c <- function(x) {x * mass.c / mass.co2}
 
 answer.bg <- '#FFFFA0'
-answer.fg <- '#0000A0'
+answer.fg <- '#A000A0'
 
 normal.body.props <- cellProperties(padding.left = 2, padding.right = 2)
 normal.head.props <- cellProperties(padding.top = 2,
@@ -155,7 +155,8 @@ shinyServer(function(input, output, session) {
   output$trend_display <- renderText({
     v <- input$trend_variable
     t <- filter(trends(), variable == v)
-    paste0('Growth rate of ', v, ' = ', prt(t$growth.rate * 100, digits = 2), '% per year')
+    HTML(paste0('Growth rate of ', em(v), ' = ', prt(t$growth.rate * 100, digits = 2), '% per year',
+           br(), "Calculated from the slope of ln(", em(v), ") starting in ", input$trend_start_year))
   })
 
   output$historical_table <- renderFlexTable({
@@ -204,33 +205,74 @@ shinyServer(function(input, output, session) {
   })
 
   output$step_1 <- renderText({
-    paste0(strong("Step 1: "), "write down current (",
-           current_year(), ") and projected ", input$target_yr, " values for ",
-           em('P'), ", ", em('g'), ", ", em('e'), ", and ", em('f'), ".")
+    paste0(strong("Step 1: "), "Write down current (",
+           current_year(), ") values for ",
+           em('P'), ", ", em('g'), ", ", em('e'), ", and ", em('f'),
+           ", and their historical growth rates.")
   })
 
-  output$step_1_table <- renderFlexTable({
+  output$step_1_table <- renderFlexTableIf({
     target_yr <- input$target_yr
     current_yr <- current_year()
     fcast <- forecast() %>% filter(variable %in% c('P', 'g', 'e', 'f')) %>%
       mutate(variable = add_units(variable),
              current = prt(current, 3, format = 'fg'),
+             growth.rate = paste0(prt(growth.rate * 100, 2), '%')) %>%
+      select(variable, current, growth.rate)
+    names(fcast) <- c('', paste0("Current"," (",current_yr,")"), "Growth rate")
+    ft <- FlexTable(fcast, header.cell.props = answer.head.props,
+                    body.cell.props = answer.body.props)
+    ft[,,to="header"] <- parCenter()
+    ft[,] <- parRight()
+    ft[,1] <- parCenter()
+    if (input$calc_show_answers)
+      ft
+    else
+      NULL
+  })
+
+  output$step_2 <- renderText({
+    paste0(strong("Step 2: "), "Calculate the projected values for ",
+           em('P'), ", ", em('g'), ", ", em('e'), ", and ", em('f'),
+           ", in ", input$target_yr)
+  })
+
+  output$step_2_formula <- renderUI({
+    current_yr = current_year()
+    target_yr = input$target_yr
+    if (! input$calc_show_answers) return()
+    withMathJax(span(paste0("If variable \\(x\\) has value \\(x(",current_yr,")\\) in ",
+                       current_yr, " and its growth rate is \\(r\\), then in ",
+                       target_yr, " its value will be \\(x(",
+                       target_yr,") = x(", current_yr, ") \\times \\exp(r \\times (",
+                       target_yr, "-", current_yr,")) = x(", current_yr, ")  \\times \\exp(r \\times ",
+                       (target_yr - current_yr), "))\\)"),
+                     style=paste0("color:", answer.fg, ";font-weight:bold;")))
+  })
+
+  output$step_2_table <- renderFlexTableIf({
+    if (! input$calc_show_answers) return()
+    target_yr <- input$target_yr
+    current_yr <- current_year()
+    fcast <- forecast() %>% filter(variable %in% c('P', 'g', 'e', 'f')) %>%
+      mutate(variable = add_units(variable),
              projected = prt(projected, 3, format = 'fg')) %>%
-      select(variable, current, projected)
-    names(fcast) <- c('', suppressWarnings(str_c(c("Current", "Projected"), " (", c(current_yr, target_yr), ")")))
-    message(paste(colnames(fcast), collapse = ', '))
-    ft <- FlexTable(fcast, header.cell.props = normal.head.props, body.cell.props = normal.body.props)
+      select(variable, projected)
+    names(fcast) <- c('', paste0("Projected (", target_yr, ")"))
+    ft <- FlexTable(fcast, header.cell.props = answer.head.props,
+                    body.cell.props = answer.body.props)
     ft[,,to="header"] <- parCenter()
     ft[,] <- parRight()
     ft[,1] <- parCenter()
     ft
   })
 
-  output$step_2 <- renderText({
-    paste0(strong("Step 2: "), "Multiply the variables together to get ", em("F"), " for each year.")
+
+  output$step_3 <- renderText({
+    paste0(strong("Step 3: "), "Multiply the variables together to get ", em("F"), " for each year.")
   })
 
-  output$step_2_table <- renderFlexTableIf({
+  output$step_3_table <- renderFlexTableIf({
     target_yr <- input$target_yr
     current_yr <- current_year()
     fcast <- forecast() %>% filter(variable %in% c('F')) %>%
@@ -249,14 +291,17 @@ shinyServer(function(input, output, session) {
     }
   })
 
-  output$step_3 <- renderText({
+  output$step_4 <- renderText({
     ref_yr <- input$ref_yr
     target_yr <- input$target_yr
     target_reduc <- input$target_reduc
-    paste0(strong("Step 3: "), "Look up emissions for ", ref_yr, " and calculate the target emissions (", target_reduc, "% less) for ", target_yr, ".")
+    paste0(strong("Step 4: "), "Look up emissions for ", ref_yr,
+           " and calculate the target emissions for ", target_yr,
+           " (", target_reduc, "% less than ", ref_yr, ") .")
   })
 
-  output$step_3_table <- renderFlexTableIf({
+  output$step_4_table <- renderFlexTableIf({
+    if (!input$calc_show_answers) return()
     ref_yr <- input$ref_yr
     target_yr <- input$target_yr
 
@@ -267,16 +312,11 @@ shinyServer(function(input, output, session) {
     ft <- FlexTable(df, header.cell.props = answer.head.props, body.cell.props = answer.body.props)
     ft[,] <- parRight()
     ft[,,to='header'] <- parCenter()
-    if (input$calc_show_answers)
-      ft
-    else
-      NULL
-  },
-  align = 'rrr', include.rownames = FALSE,
-  html.table.attributes = list(style="color:darkblue;")
-  )
+    ft
+  })
 
-  output$step_4 <- renderText({
+  output$step_5 <- renderText({
+    show_answers <- input$calc_show_answers
     ref_yr <- input$ref_yr
     target_yr <- input$target_yr
     target_reduc <- input$target_reduc
@@ -289,17 +329,17 @@ shinyServer(function(input, output, session) {
     rate <- ln_em_ratio / delta_yr
 
     elements <- span(
-      strong("Step 4: "),
+      strong("Step 5: "),
       "Calculate the rate of emissions reduction necessary to meet this target:"
-      )
+    )
     sub_elements <- tags$ol(style="list-style-type:lower-alpha;")
     li_element <- tags$li(paste0("Calculate the ratio of the target (", target_yr,
                                  ") emissions to current (", current_yr, ") emissions:"))
-    if (input$calc_show_answers) {
+    if (show_answers) {
       li_element <- li_element %>%
         tagAppendChildren(br(),
                           span(paste0(prt(target_em, 0), ' / ', prt(current_em, 0),
-                                 ' = ', prt(em_ratio, 3)),
+                                      ' = ', prt(em_ratio, 3)),
                                style=paste0("color:",answer.fg,";font-weight:bold;"))
         )
     }
@@ -307,11 +347,11 @@ shinyServer(function(input, output, session) {
       tagAppendChild(li_element)
 
     li_element <- tags$li("Take the natural logarithm of the ratio: ")
-    if (input$calc_show_answers) {
+    if (show_answers) {
       li_element <- li_element %>%
         tagAppendChildren(br(),
                           span(paste0("ln(", prt(em_ratio, 3), ') = ',
-                                 prt(ln_em_ratio, 2)),
+                                      prt(ln_em_ratio, 2)),
                                style=paste0("color:",answer.fg,";font-weight:bold;"))
         )
     }
@@ -320,22 +360,22 @@ shinyServer(function(input, output, session) {
 
     li_element <- tags$li(
       paste0("Divide the logarithm by the number of years between ",
-                             current_yr, " and ", target_yr, ":"))
-    if (input$calc_show_answers) {
+             current_yr, " and ", target_yr, ":"))
+    if (show_answers) {
       li_element <- li_element %>%
         tagAppendChildren(br(),
                           span(paste0(target_yr, ' - ', current_yr, ' = ', delta_yr),
-                          br(),
-                          paste0(prt(ln_em_ratio,2), ' / ', delta_yr,
-                                        ' = ',
-                                        prt(rate, 3, format='fg'),
-                                        ' = ',
-                                        prt(rate * 100, 2), '%'),
-                          br(),
-                          paste0("Meeting the emissions goal of ", prt(target_em, 0),
-                                 " in ", target_yr, " would require F to drop by ",
-                                 prt(rate * 100, 2), "% per year"),
-                          style=paste0("color:",answer.fg,";font-weight:bold;"))
+                               br(),
+                               paste0(prt(ln_em_ratio,2), ' / ', delta_yr,
+                                      ' = ',
+                                      prt(rate, 3, format='fg'),
+                                      ' = ',
+                                      prt(rate * 100, 2), '%'),
+                               br(),
+                               paste0("Meeting the emissions goal of ", prt(target_em, 0),
+                                      " in ", target_yr, " would require F to drop by ",
+                                      prt(rate * 100, 2), "% per year"),
+                               style=paste0("color:",answer.fg,";font-weight:bold;"))
         )
     }
     sub_elements <- sub_elements %>%
@@ -345,7 +385,7 @@ shinyServer(function(input, output, session) {
     as.character(elements)
   })
 
-  output$step_5 <- renderText({
+  output$step_6 <- renderText({
     ref_yr <- input$ref_yr
     target_yr <- input$target_yr
     target_reduc <- input$target_reduc
@@ -365,16 +405,16 @@ shinyServer(function(input, output, session) {
     ref_yr <- input$ref_yr
     target_yr <- input$target_yr
     target_reduc <- input$target_reduc
-    elements <- span(strong("Step 5: "),
-                     "The annual growth rate of F, which you calculated in the last step, is the sum of the growth rates of P, g, e, and f. Look up the historical growth rates of P and g, and subtract them from the growth rate of F that you calculated in the last step."
-                     )
+    elements <- span(strong("Step 6: "),
+                     HTML("The annual growth rate of <i>F</i>, which you calculated in the last step, is the sum of the growth rates of <i>P</i>, <i>g</i>, <i>e</i>, and <i>f</i>. Look up the historical growth rates of <i>P</i> and <i>g</i>, and subtract them from the growth rate of <i>F</i> that you calculated in the last step.")
+    )
     if (input$calc_show_answers) {
       elements <- elements %>%
         tagAppendChildren(br(),
                           span(paste0(prt(rate * 100, 2), '% - (', prt(tP * 100,2), '% + ',
                                       prt(tg * 100,2), '%) = ', prt(t.ef.proj * 100,2), '%'),
                                style=paste0("color:",answer.fg,";font-weight:bold;"))
-                          )
+        )
     }
     as.character(elements)
   })
@@ -394,13 +434,14 @@ shinyServer(function(input, output, session) {
     tsy <- input$trend_start_year
     before <- ks %>% filter(year <= tsy) %>% mutate(in.trend = FALSE)
     after <- ks %>% filter(year >= tsy) %>% mutate(in.trend = TRUE)
-    bind_rows(before, after) %>% mutate(f.in.trend = factor(in.trend))
+    bind_rows(before, after) %>% mutate(f.in.trend = factor(in.trend),
+                                        id = row_number())
   })
 
   trend_tooltip <- function(x) {
     if (is.null(x)) return(NULL)
     if (is.null(x$id)) return(NULL)
-    k <- isolate(kaya_subset())
+    k <- isolate(kaya_subset_plot())
     v <- input$trend_variable
     r = k[k$id == x$id,]
     year = r$year
@@ -465,8 +506,8 @@ shinyServer(function(input, output, session) {
       x_tics <- seq(10 * round(history_start() / 10), 10 * round(history_stop() / 10), 10)
     tsy <- input$trend_start_year
     plot <- kaya_subset_plot %>%
-#      mutate(in.trend = year >= tsy, f.in.trend = factor(in.trend)) %>%
-    ggvis(x = ~year, y = yvar) %>%
+      #      mutate(in.trend = year >= tsy, f.in.trend = factor(in.trend)) %>%
+      ggvis(x = ~year, y = yvar) %>%
       group_by(f.in.trend) %>%
       layer_lines(strokeWidth := 2, stroke = ~f.in.trend) %>%
       ungroup() %>%
