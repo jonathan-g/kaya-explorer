@@ -15,6 +15,7 @@ p_load(ggvis)
 p_load(RColorBrewer)
 
 source('load_kaya.R')
+source('energy_by_fuel.R')
 
 goodness_of_fit <- function(r.squared) {
   gof <- NA
@@ -71,6 +72,8 @@ kaya_labels <- data.frame(
             'Carbon intensity', 'Carbon intensity of economy'),
   stringsAsFactors = FALSE
 )
+
+energy_by_fuel <- load_energy_by_fuel()
 
 prt <- function(x, digits = NULL, big.mark = ',', format = 'f') {
   formatC(x, digits = digits, big.mark = big.mark, format = format)
@@ -169,6 +172,27 @@ shinyServer(function(input, output, session) {
     } else {
       t <- data.frame(variable = vars, growth.rate = NA, r.squared = NA)
     }
+  })
+
+  fuel_dist <- reactive({
+    fd <- energy_by_fuel %>% filter(country == input$country)
+    if (nrow(fd) == 0) {
+      fd <- NULL
+    } else {
+      if (current_year() %in% fd$year) {
+        y <- current_year()
+      } else if (current_year() > max(fd$year)) {
+        y <- max(fd$year)
+      } else if (current_year() < min(fd$year)) {
+        y <- min(fd$year)
+      } else {
+        error("Cannot figure out year for current year = ", current_year(), " and fd range = (",
+              paste0(range(fd$year), collapse = ', '), ")")
+      }
+      fd <- fd %>% filter(year == y)
+    }
+    # message(print(fd))
+    invisible(fd)
   })
 
   forecast <- reactive({
@@ -273,6 +297,16 @@ shinyServer(function(input, output, session) {
 
   output$tab_title_decarb <- renderText({
     paste("Implied Decarbonization for", input$country)
+  })
+
+  output$tab_title_fuel_dist <- renderText({
+    x <- paste0("Energy Mix for ", input$country)
+    if (! is.null(fuel_dist())) {
+      x <- paste0(x, " in ", fuel_dist()$year[1])
+    } else {
+      x <- paste0(x, " is not available")
+    }
+    x
   })
 
   output$tab_title_historical <- renderText({
@@ -537,6 +571,58 @@ shinyServer(function(input, output, session) {
         )
     }
     as.character(elements)
+  })
+
+  output$fuel_dist <- renderText({
+    if(is.null(fuel_dist())) {
+       mix_title <- paste0("Energy mix for ", input$country, " is not available.")
+    } else {
+    mix_title <- paste0("Energy mix for ", input$country, " (quads), in ", fuel_dist()$year[[1]])
+    }
+    mix_title
+  })
+
+  output$fuel_dist_table <- renderFlexTableIf({
+    df <- fuel_dist()
+    if (is.null(df)) {
+      NULL
+    } else {
+      df <- df %>% mutate(quads = round(quads, 2), pct = round(pct, 1)) %>%
+        dplyr::select(Fuel = fuel, Quads = quads, '%' = pct) %>%
+        arrange(Fuel)
+
+      df <- df %>% bind_rows(summarize(df, Fuel = 'Total', Quads = sum(Quads), `%` = sum(`%`)))
+      ft <- FlexTable(df, header.cell.props = normal.head.props, body.cell.props = normal.body.props)
+      ft[,] <- parRight()
+      ft[,,to='header'] <- parCenter()
+      ft
+    }
+  })
+
+  output$fuel_dist_plot <- renderPlot({
+    fd <- fuel_dist()
+    if (is.null(fd)) {
+      NULL
+    } else {
+    fd <- fd %>%
+      arrange(fuel) %>%
+      mutate(qmin = cumsum(lag(quads, default=0)), qmax = cumsum(quads))
+    labels <- fd %>% mutate(label = str_c(fuel, ": ", prt(quads,2), " quads (", prt(pct,1), "%)")) %>%
+      arrange(fuel) %>% select(fuel, label) %>%
+      spread(key = fuel, value = label) %>% unlist()
+    message(paste0(levels(fd$fuel), collapse=", "))
+    ggplot(fd, aes(ymin = qmin, ymax = qmax, fill = fuel)) +
+      geom_rect(xmin = 2, xmax = 4) +
+      coord_polar(theta = "y") +
+      xlim(c(0,4)) +
+      scale_fill_manual(values = c(Coal = '#e31a1c', 'Natural Gas' = '#fdbf6f', 'Oil' = '#ff7f00',
+                                   Nuclear = '#b2df8a', Renewables = '#33a02c', Total = '#a6cee3'),
+                        breaks = names(labels), labels = labels) +
+      theme_bw(base_size = 20) +
+      theme(panel.grid=element_blank(),
+            axis.text=element_blank(),
+            axis.ticks=element_blank())
+    }
   })
 
 

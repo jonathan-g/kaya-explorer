@@ -11,7 +11,7 @@ library(pacman)
 p_load(shiny)
 p_load(ggvis)
 
-enable_answers <- TRUE
+enable_answers <- FALSE
 
 shinyUI(fluidPage(
 
@@ -102,6 +102,15 @@ shinyUI(fluidPage(
                              ggvisOutput('implied_decarb_plot')
                            )
                   ),
+                  tabPanel("Energy Mix",
+                           h3(textOutput('tab_title_fuel_dist')),
+                           div(
+                             # htmlOutput('fuel_dist'),
+                             tableOutput('fuel_dist_table'),
+                             br(),
+                             plotOutput('fuel_dist_plot')
+                           )
+                           ),
                   tabPanel("Historical",
                            h3(textOutput('tab_title_historical')),
                            div(
