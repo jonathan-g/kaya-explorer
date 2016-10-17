@@ -5,8 +5,13 @@
 # http://shiny.rstudio.com
 #
 
-library(shiny)
-library(ggvis)
+if (!require(pacman)) install.packages('pacman')
+library(pacman)
+
+p_load(shiny)
+p_load(ggvis)
+
+enable_answers <- TRUE
 
 shinyUI(fluidPage(
 
@@ -70,18 +75,26 @@ shinyUI(fluidPage(
                   tabPanel("Calculations",
                            h3(textOutput('tab_title_calc')),
                            br(),
-                           checkboxInput('calc_show_answers', "Show answers", value = FALSE),
+                           {
+                             if (enable_answers) {
+                               checkboxInput('calc_show_answers', "Show answers", value = FALSE)
+                             } else {
+                               HTML("")
+                             }
+                           },
                            htmlOutput('step_1'),
                            tableOutput('step_1_table'),
                            htmlOutput('step_2'),
-                           uiOutput('step_2_formula'),
                            tableOutput('step_2_table'),
                            htmlOutput('step_3'),
+                           uiOutput('step_3_formula'),
                            tableOutput('step_3_table'),
                            htmlOutput('step_4'),
                            tableOutput('step_4_table'),
                            htmlOutput('step_5'),
-                           htmlOutput('step_6')
+                           tableOutput('step_5_table'),
+                           htmlOutput('step_6'),
+                           htmlOutput('step_7')
                   ),
                   tabPanel("Implied Decarbonization",
                            h3(textOutput('tab_title_decarb')),

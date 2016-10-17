@@ -1,8 +1,10 @@
-library(readxl)
-library(magrittr)
-library(dplyr)
-library(tidyr)
-library(stringr)
+if (!require(pacman)) install.packages('pacman')
+library(pacman)
+
+p_load(tidyverse)
+p_load(readxl)
+p_load(magrittr)
+p_load(stringr)
 
 mtoe = 1 / 25.2 # quads
 data.dir <- 'data'
