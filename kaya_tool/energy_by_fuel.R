@@ -10,8 +10,10 @@ load_energy_by_fuel <- function() {
   nuclear_filename <- 'data/World_nuclear_energy_consumption_by_region.csv'
   renewable_filename <- 'data/World_consumption_of_hydroelectricity_and_other_renewable_energy_by_region.csv'
 
+  # See US EIA, Annual Energy Review 2012, Appendix A, Table A-6 for conversion factors, esp. nuclear
+  # http://www.eia.gov/totalenergy/data/annual/pdf/aer.pdf)
   conversions <- tibble(units = c('quad Btu', 'Tcf', 'bill kWh', 'million b/d'),
-                        conversion = c(1, 1.028 , 3 * 3412 * 1E9 * 1E-15, 365 * 5.8E12 * 1E-15))
+                        conversion = c(1, 1.028 , (10452. / 3412.) * 3412. * 1E9 * 1E-15, 365 * 5.8E12 * 1E-15))
 
   translations <- c('Russia' = 'Former Soviet Union', 'Total World' = 'World') %>%
     setNames(str_c('^', names(.), '$'))

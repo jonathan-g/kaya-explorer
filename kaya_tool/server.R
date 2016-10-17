@@ -617,7 +617,7 @@ shinyServer(function(input, output, session) {
       xlim(c(0,4)) +
       scale_fill_manual(values = c(Coal = '#e31a1c', 'Natural Gas' = '#fdbf6f', 'Oil' = '#ff7f00',
                                    Nuclear = '#b2df8a', Renewables = '#33a02c', Total = '#a6cee3'),
-                        breaks = names(labels), labels = labels) +
+                        breaks = names(labels), labels = labels, name = "Fuel") +
       theme_bw(base_size = 20) +
       theme(panel.grid=element_blank(),
             axis.text=element_blank(),
