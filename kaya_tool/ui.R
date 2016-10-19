@@ -26,7 +26,7 @@ shinyUI(fluidPage(
     sidebarPanel(
       selectInput('country', "Country", choices = NULL),
       numericInput('target_yr', 'Target year', step = 1, value = 2050),
-      numericInput('target_reduc', 'Emissions reduction (%)', min=0, max=100,
+      numericInput('target_reduc', 'Emissions reduction (%)', max=100,
                    value = 80),
       numericInput('ref_yr', 'Reference year for emissions reduction', step = 1, value = 1990),
       numericInput('trend_start_year', 'Calculate trends starting in',
@@ -122,7 +122,9 @@ shinyUI(fluidPage(
                   tabPanel("Historical",
                            h3(textOutput('tab_title_historical')),
                            div(
-                             DT::dataTableOutput("historical_table")
+                             DT::dataTableOutput("historical_table"),
+                             br(),
+                             downloadButton('downloadData', 'Download')
                            )
                   )
       )

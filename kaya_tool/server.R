@@ -63,10 +63,10 @@ kaya_labels <- data.frame(
   variable = c('P','G','E','F','g','e', 'f', 'ef'),
   unit = c('billion', 'trillion dollars', 'quad','MMT CO2',
            '$1000 per person', 'quad per $trillion', 'MMT per quad',
-           'metric ton per $ billion'),
+           'metric ton per $ million'),
   long.unit = c('billion people', 'trillion dollars', 'quad','million metric tons CO2',
            '$1000 per person', 'quad of energy per $trillion  GDP', 'million metric tons CO2 per quad',
-           'metric ton CO2 per billion dollars GDP'),
+           'metric ton CO2 per million dollars GDP'),
   long.long = c('Population', 'GDP', 'Energy consumption', 'Emissions',
            'Per-capita GDP', 'Energy intensity of the economy',
            'CO2 intensity of the energy supply',
@@ -292,8 +292,20 @@ shinyServer(function(input, output, session) {
     # ks
   })
 
+  output$downloadData <- downloadHandler(
+    filename = function() {
+      input$country %>% str_replace_all('[^A-Za-z0-9]+', '_') %>%str_c('.csv')
+      },
+    content = function(file) {
+      write_csv(
+        kaya_subset() %>% select(-country, -geography, -id),
+        path = file)
+    })
+
   output$policy_goal <- renderText({
-    as.character(span(strong('Policy goal: '), input$target_yr, ' emissions ', input$target_reduc, '% below ', input$ref_yr))
+    as.character(span(strong('Policy goal: '), paste0(input$target_yr, ' emissions ',
+                      abs(input$target_reduc), '% ',
+                      ifelse(input$target_reduc >= 0, 'below', 'above'), ' ', input$ref_yr)))
   })
 
   output$trend_title <- renderText({
@@ -468,9 +480,12 @@ shinyServer(function(input, output, session) {
     target_yr <- input$target_yr
     target_reduc <- input$target_reduc
     paste0(strong("Step 5: "), "Look up emissions for ", ref_yr,
-           " in the &ldquo;Historical&rdquo; tab",
+           " under the &ldquo;Bottom up Analysis&rdquo; table on the left panel,",
+           " or in the &ldquo;Historical&rdquo; tab,",
            " and calculate the target emissions for ", target_yr,
-           " (", target_reduc, "% less than ", ref_yr, ") .")
+           " (", abs(target_reduc), "% ",
+           ifelse(target_reduc >= 0, 'less', 'greater'),
+           " than ", ref_yr, ") .")
   })
 
   output$step_5_table <- renderFlexTableIf({
@@ -670,8 +685,10 @@ shinyServer(function(input, output, session) {
     ref = prt(ref_emissions(), 3, format = 'fg')
     paste0(
       as.character(h4(paste0(input$ref_yr, ' emissions = ', ref, ' MMT CO2'))),
-      as.character(h4(input$target_yr, ' target:',
-                      input$target_reduc, '% reduction = ', target, ' MMT')))
+      as.character(h4(paste0(input$target_yr, ' target: ',
+                      abs(input$target_reduc), '% ',
+                      ifelse(input$target_reduc >= 0, 'below', 'above'),
+                      ' ', input$ref_yr, ' = ', target, ' MMT'))))
   })
 
   kaya_subset_plot <- reactive({
