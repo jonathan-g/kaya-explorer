@@ -9,6 +9,7 @@ if (!require(pacman)) install.packages('pacman')
 library(pacman)
 
 p_load(shiny)
+p_load(DT)
 p_load(ggvis)
 
 enable_answers <- FALSE
@@ -121,7 +122,7 @@ shinyUI(fluidPage(
                   tabPanel("Historical",
                            h3(textOutput('tab_title_historical')),
                            div(
-                             tableOutput("historical_table")
+                             DT::dataTableOutput("historical_table")
                            )
                   )
       )

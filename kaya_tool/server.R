@@ -11,6 +11,7 @@ p_load(tidyverse)
 p_load(broom)
 p_load(stringr)
 p_load(rtable)
+p_load(DT)
 p_load(ggvis)
 p_load(RColorBrewer)
 
@@ -262,13 +263,13 @@ shinyServer(function(input, output, session) {
     k.label <- kaya_labels %>% filter(variable == v)
     t <- filter(trends(), variable == v)
     HTML(paste0(k.label$long.long, " (", k.label$long.unit, "): ",
-                'Growth rate of ', em(v), ' = ', prt(t$growth.rate * 100, digits = 2), '% per year',
+                'Rate of change of ', em(v), ' = ', prt(t$growth.rate * 100, digits = 2), '% per year',
                 br(), "Calculated from the slope of ln(", em(v), ") starting in ", input$trend_start_year))
     # br(), "R", tags$sup("2"), " = ", prt(t$r.squared, digits = 3),
     # " (", goodness_of_fit(t$r.squared), ")"))
   })
 
-  output$historical_table <- renderFlexTable({
+  output$historical_table <- DT::renderDataTable({
     ks <- kaya_subset() %>% select(year, P, g, e, f, ef, G, E, F)
     ks <- ks %>% mutate(P = prt(P, 2),
                         g = prt(g,1),
@@ -278,13 +279,17 @@ shinyServer(function(input, output, session) {
     cn <- colnames(ks)
     labs <- kaya_labels %>% mutate(label = suppressWarnings(str_c(long, ' (', unit, ')'))) %>% select(variable, label)
     colnames(ks) <- c('Year', labs$label[pmatch(cn[-1], labs$variable)])
-    ks
-    ft <- FlexTable(ks)
-    ft[,,to="header"] <- parCenter()
-    ft[,] <- parRight()
-    ft[,1] <- parCenter()
-    ft
-
+    # message("Kaya Subset:")
+    # message(print(ks))
+    dt <- DT::datatable(ks,
+                        rownames =  FALSE, filter = 'none',
+                        options = list(
+                          # sDom  = '<"top">lrt<"bottom">ip',
+                          columnDefs = list(list(targets = seq(0,ncol(ks)-1), className = 'dt-right'))
+                        )
+    )
+    invisible(dt)
+    # ks
   })
 
   output$policy_goal <- renderText({
@@ -335,7 +340,7 @@ shinyServer(function(input, output, session) {
                               projected = prt(projected, 3, format = 'fg')) %>%
       select(variable, growth.pct, current, projected) %>%
       mutate(variable = add_units(variable))
-    names(fcast) <- c('', 'Growth Rate', paste0('Current (', current_yr, ')'),
+    names(fcast) <- c('', 'Rate of Change', paste0('Current (', current_yr, ')'),
                       paste0('Projected (', input$target_yr, ')'))
     ft <- FlexTable(fcast)
     ft[,, to='header'] <- parCenter()
@@ -348,7 +353,7 @@ shinyServer(function(input, output, session) {
     paste0(strong("Step 1: "), "Write down current (",
            current_year(), ") values for ",
            em('P'), ", ", em('g'), ", ", em('e'), ", and ", em('f'),
-           ", and their historical growth rates.")
+           ", and their historical rates of change.")
   })
 
   output$step_1_table <- renderFlexTableIf({
@@ -359,7 +364,7 @@ shinyServer(function(input, output, session) {
              current = prt(current, 3, format = 'fg'),
              growth.rate = paste0(prt(growth.rate * 100, 2), '%')) %>%
       select(variable, current, growth.rate)
-    names(fcast) <- c('', paste0("Current"," (",current_yr,")"), "Growth rate")
+    names(fcast) <- c('', paste0("Current"," (",current_yr,")"), "Rate of Change")
     ft <- FlexTable(fcast, header.cell.props = answer.head.props,
                     body.cell.props = answer.body.props)
     ft[,,to="header"] <- parCenter()
@@ -372,7 +377,7 @@ shinyServer(function(input, output, session) {
   })
 
   output$step_2 <- renderText({
-    paste0(strong("Step 2: "), "Which variables seem to follow a relatively constant growth rate, ",
+    paste0(strong("Step 2: "), "Which variables seem to follow a relatively constant rate of change, ",
            "and which do not?")
   })
 
@@ -398,7 +403,9 @@ shinyServer(function(input, output, session) {
   output$step_3 <- renderText({
     paste0(strong("Step 3: "), "Calculate the projected values for ",
            em('P'), ", ", em('g'), ", ", em('e'), ", and ", em('f'),
-           ", in ", input$target_yr)
+           ", in ", input$target_yr, '.',
+           ' Show your work, and check your answers against the &ldquo;Bottom-up Analysis&rdquo; table on the left-hand panel.',
+           ' (Remember to divide percentages by 100)')
   })
 
   output$step_3_formula <- renderUI({
@@ -406,7 +413,7 @@ shinyServer(function(input, output, session) {
     target_yr = input$target_yr
     if (!calc_show_answers()) return()
     withMathJax(span(paste0("If variable \\(x\\) has value \\(x(",current_yr,")\\) in ",
-                       current_yr, " and its growth rate is \\(r\\), then in ",
+                       current_yr, " and its rate of change is \\(r\\), then in ",
                        target_yr, " its value will be \\(x(",
                        target_yr,") = x(", current_yr, ") \\times \\exp(r \\times (",
                        target_yr, "-", current_yr,")) = x(", current_yr, ")  \\times \\exp(r \\times ",
@@ -433,7 +440,8 @@ shinyServer(function(input, output, session) {
 
 
   output$step_4 <- renderText({
-    paste0(strong("Step 4: "), "Multiply the variables together to get ", em("F"), " for each year.")
+    paste0(strong("Step 4: "), "Multiply the variables together to get ", em("F"), " for each year.",
+           ' Show your work, and check your answers against the &ldquo;Bottom-up Analysis&rdquo; table on the left-hand panel.')
   })
 
   output$step_4_table <- renderFlexTableIf({
@@ -460,6 +468,7 @@ shinyServer(function(input, output, session) {
     target_yr <- input$target_yr
     target_reduc <- input$target_reduc
     paste0(strong("Step 5: "), "Look up emissions for ", ref_yr,
+           " in the &ldquo;Historical&rdquo; tab",
            " and calculate the target emissions for ", target_yr,
            " (", target_reduc, "% less than ", ref_yr, ") .")
   })
@@ -497,16 +506,27 @@ shinyServer(function(input, output, session) {
       "Calculate the rate of emissions reduction necessary to meet this target:"
     )
     sub_elements <- tags$ol(style="list-style-type:lower-alpha;")
-    li_element <- tags$li(paste0("Calculate the ratio of the target (", target_yr,
-                                 ") emissions to current (", current_yr, ") emissions:"))
+    li_element <- tags$li(paste0("Look up the current (", current_yr, ") emissions:"))
     if (show_answers) {
       li_element <- li_element %>%
         tagAppendChildren(br(),
-                          span(paste0(prt(target_em, 0), ' / ', prt(current_em, 0),
-                                      ' = ', prt(em_ratio, 3)),
+                          span(paste0(prt(current_em, 0)),
                                style=paste0("color:",answer.fg,";font-weight:bold;"))
         )
     }
+    sub_elements <- sub_elements %>%
+      tagAppendChild(li_element)
+
+    li_element <- tags$li(paste0("Calculate the ratio of the target (", target_yr,
+                     ") emissions to current (", current_yr, ") emissions:"))
+      if (show_answers) {
+        li_element <- li_element %>%
+          tagAppendChildren(br(),
+                            span(paste0(prt(target_em, 0), ' / ', prt(current_em, 0),
+                                        ' = ', prt(em_ratio, 3)),
+                                 style=paste0("color:",answer.fg,";font-weight:bold;"))
+          )
+      }
     sub_elements <- sub_elements %>%
       tagAppendChild(li_element)
 
@@ -570,8 +590,14 @@ shinyServer(function(input, output, session) {
     target_yr <- input$target_yr
     target_reduc <- input$target_reduc
     elements <- span(strong("Step 7: "),
-                     HTML("The annual growth rate of <i>F</i>, which you calculated in the last step, is the sum of the growth rates of <i>P</i>, <i>g</i>, <i>e</i>, and <i>f</i>. Look up the historical growth rates of <i>P</i> and <i>g</i>, and subtract them from the growth rate of <i>F</i> that you calculated in the last step.")
-    )
+                     HTML(paste0(
+                     "The annual rate of change of ",
+                     em("F"), ", which you calculated in the last step, is the sum of the rate of changes of ",
+                     em("P"), ", ", em("g"), ", ", em("e"), ", and ", em("f"), ".",
+                     " Look up the historical rate of changes of ", em("P"), " and ", em("g"),
+                     ", and subtract them from the rate of change of ", em("F"), " that you calculated in the last step ",
+                     "to get the decarbonization rate (the rate of change of ", em("ef"), ")."
+    )))
     if (calc_show_answers()) {
       elements <- elements %>%
         tagAppendChildren(br(),
