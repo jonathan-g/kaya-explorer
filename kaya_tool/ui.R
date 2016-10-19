@@ -12,6 +12,7 @@ p_load(shiny)
 p_load(ggvis)
 
 enable_answers <- FALSE
+enable_topdown <- FALSE
 
 shinyUI(fluidPage(
 
@@ -31,11 +32,17 @@ shinyUI(fluidPage(
                    step = 1, value = 1980),
       htmlOutput('policy_goal'),
       br(),
-      radioButtons("analysis", "Analysis:",
-                   #                   c("Bottom-up" = 'bottom.up', "Top-down" = 'top.down'),
-                   c("Bottom-up" = 'bottom.up'),
-                   inline = TRUE,
-                   selected = 'bottom.up'),
+      {
+        if (enable_topdown) {
+          radioButtons("analysis", "Analysis:",
+                       #                   c("Bottom-up" = 'bottom.up', "Top-down" = 'top.down'),
+                       c("Bottom-up" = 'bottom.up'),
+                       inline = TRUE,
+                       selected = 'bottom.up')
+        } else {
+          HTML("")
+        }
+      },
       htmlOutput('trend_title'),
       tableOutput('trend_table'),
       htmlOutput('target_emissions')

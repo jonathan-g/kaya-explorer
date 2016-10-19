@@ -63,6 +63,13 @@ kaya_labels <- data.frame(
   unit = c('billion', 'trillion dollars', 'quad','MMT CO2',
            '$1000 per person', 'quad per $trillion', 'MMT per quad',
            'metric ton per $ billion'),
+  long.unit = c('billion people', 'trillion dollars', 'quad','million metric tons CO2',
+           '$1000 per person', 'quad of energy per $trillion  GDP', 'million metric tons CO2 per quad',
+           'metric ton CO2 per billion dollars GDP'),
+  long.long = c('Population', 'GDP', 'Energy consumption', 'Emissions',
+           'Per-capita GDP', 'Energy intensity of the economy',
+           'CO2 intensity of the energy supply',
+           'CO2 intensity of the economy'),
   long = c('Population', 'GDP', 'Energy consumption', 'Emissions',
            'Per-capita GDP', 'Energy intensity',
            'CO2 intensity of energy',
@@ -252,11 +259,13 @@ shinyServer(function(input, output, session) {
 
   output$trend_display <- renderText({
     v <- input$trend_variable
+    k.label <- kaya_labels %>% filter(variable == v)
     t <- filter(trends(), variable == v)
-    HTML(paste0('Growth rate of ', em(v), ' = ', prt(t$growth.rate * 100, digits = 2), '% per year',
-           br(), "Calculated from the slope of ln(", em(v), ") starting in ", input$trend_start_year))
-           # br(), "R", tags$sup("2"), " = ", prt(t$r.squared, digits = 3),
-           # " (", goodness_of_fit(t$r.squared), ")"))
+    HTML(paste0(k.label$long.long, " (", k.label$long.unit, "): ",
+                'Growth rate of ', em(v), ' = ', prt(t$growth.rate * 100, digits = 2), '% per year',
+                br(), "Calculated from the slope of ln(", em(v), ") starting in ", input$trend_start_year))
+    # br(), "R", tags$sup("2"), " = ", prt(t$r.squared, digits = 3),
+    # " (", goodness_of_fit(t$r.squared), ")"))
   })
 
   output$historical_table <- renderFlexTable({
@@ -283,8 +292,12 @@ shinyServer(function(input, output, session) {
   })
 
   output$trend_title <- renderText({
-    title <- c(top.down = "Top Down", bottom.up = "Bottom up")[input$analysis]
-    as.character(h4(strong(title)))
+    if ('analysis' %in% names(input)) {
+      title <- c(top.down = "Top Down", bottom.up = "Bottom up")[input$analysis]
+    } else {
+      title <- 'Bottom up'
+    }
+    as.character(h4(strong(str_c(title, " Analysis"))))
   })
 
   output$tab_title_trend <- renderText({
