@@ -155,7 +155,15 @@ load_top_down <- function() {
     dplyr::filter(! is.na(nation)) %>%
     mutate(r.g = r.g %>% str_extract('^.*?(?=%$)') %>% as.numeric() / 100)
 
+  e <- read_csv('data/World_energy_intensity_by_region.csv', skip = 4,
+                na = c('NA','N/A','')) %>%
+    rename(nation = X1, r.e = `Growth (2012-2040)`) %>%
+    select(nation, r.e) %>%
+    dplyr::filter(! is.na(nation)) %>%
+    mutate(r.e = r.e %>% str_extract('^.*?(?=%$)') %>% as.numeric() / 100)
+
   top.down <- P %>% full_join(g, by = 'nation') %>%
+    full_join(e, by = 'nation') %>%
     translate_nations()
   invisible(top.down)
 }

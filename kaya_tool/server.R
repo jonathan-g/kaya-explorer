@@ -654,14 +654,17 @@ shinyServer(function(input, output, session) {
       NULL
     } else {
       message("td: ", str_c(names(td), " = ", td, collapse = ", "))
-      td <- td %>% rename(P = r.P, g = r.g) %>%
-        mutate(P = 100 * P, g = 100 * g, G = P + g) %>%
+      td <- td %>% rename(P = r.P, g = r.g, e = r.e) %>%
+        mutate(P = 100 * P, g = 100 * g, e = 100 * e,
+               G = P + g, E = G + e) %>%
         select(-country) %>%
         mutate_each(funs(prt(., 2) %>% str_c('%'))) %>%
-        gather(key = Parameter, value = `Growth rate`)
+        gather(key = Parameter, value = `Growth rate`) %>%
+        mutate(Parameter = ordered(Parameter, levels = c('P', 'g', 'e', 'G', 'E')))
 
       ft <- FlexTable(td, header.cell.props = normal.head.props, body.cell.props = normal.body.props)
-      ft[,] <- parRight()
+      ft[,1] <- parCenter()
+      ft[,2] <- parRight()
       ft[,,to='header'] <- parCenter()
       ft
     }
