@@ -110,6 +110,12 @@ shinyUI(fluidPage(
                              ggvisOutput('implied_decarb_plot')
                            )
                   ),
+                  tabPanel("Top Down",
+                           h3(textOutput('tab_title_top_down')),
+                           div(
+                             tableOutput('top_down_growth_table')
+                             )
+                           ),
                   tabPanel("Energy Mix",
                            h3(textOutput('tab_title_fuel_dist')),
                            div(

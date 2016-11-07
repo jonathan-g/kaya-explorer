@@ -8,6 +8,7 @@ if (!require(pacman)) install.packages('pacman')
 library(pacman)
 p_load(shiny)
 p_load(tidyverse)
+p_load(magrittr)
 p_load(broom)
 p_load(stringr)
 p_load(rtable)
@@ -56,6 +57,8 @@ answer.head.props <- cellProperties(padding.top = 2,
 kaya <- load_kaya()$kaya %>% mutate(F = c.to.co2(F), f = c.to.co2(f), ef = c.to.co2(ef))
 
 kaya$id <- seq_len(nrow(kaya))
+
+top_down <- load_top_down()
 
 countries <- as.character(unique(kaya$country))
 
@@ -180,6 +183,14 @@ shinyServer(function(input, output, session) {
     } else {
       t <- data.frame(variable = vars, growth.rate = NA, r.squared = NA)
     }
+  })
+
+  top_down_trends <- reactive({
+    td <- top_down %>% dplyr::filter(country == input$country)
+    if (nrow(td) == 0) {
+      td  <- NULL
+    }
+    td
   })
 
   fuel_dist <- reactive({
@@ -625,6 +636,35 @@ shinyServer(function(input, output, session) {
         )
     }
     as.character(elements)
+  })
+
+  output$tab_title_top_down <- renderText({
+    title <- str_c("Top-down predictions of future growth rates for ",
+                   input$country)
+    td <- top_down_trends()
+    if (is.null(td)) {
+      title <- str_c(title, " are not available.")
+    }
+    title
+  })
+
+  output$top_down_growth_table <- renderFlexTableIf({
+    td <- top_down_trends()
+    if(is.null(td)) {
+      NULL
+    } else {
+      message("td: ", str_c(names(td), " = ", td, collapse = ", "))
+      td <- td %>% rename(P = r.P, g = r.g) %>%
+        mutate(P = 100 * P, g = 100 * g, G = P + g) %>%
+        select(-country) %>%
+        mutate_each(funs(prt(., 2) %>% str_c('%'))) %>%
+        gather(key = Parameter, value = `Growth rate`)
+
+      ft <- FlexTable(td, header.cell.props = normal.head.props, body.cell.props = normal.body.props)
+      ft[,] <- parRight()
+      ft[,,to='header'] <- parCenter()
+      ft
+    }
   })
 
   output$fuel_dist <- renderText({

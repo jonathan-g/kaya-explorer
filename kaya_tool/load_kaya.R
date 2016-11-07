@@ -119,6 +119,47 @@ load_kaya <- function() {
   list(kaya = kaya, data = energy.intensity)
 }
 
+translate_nations <- function(df) {
+  nation_table = data_frame(
+    nation = c( "United States", "Canada",
+                "Mexico/Chile", "Mexico/Chile",
+               "Japan", "South Korea",
+               "Australia/New Zealand", "Australia/New Zealand",
+               "Russia", "China", "India",
+               "Brazil", "Total World"),
+    country = c("United States", "Canada",
+                "Mexico", "Chile",
+                "Japan", "South Korea",
+                "Australia", "New Zealand",
+                "Russia", "China", "India",
+                "Brazil", "World")
+  )
+
+  inner_join(nation_table, df, by = 'nation') %>%
+    select(-nation) %>%
+    invisible()
+}
+
+load_top_down <- function() {
+  P <- read_csv('data/World_population_by_region.csv', skip = 4,
+                na = c('NA','N/A','')) %>%
+    rename(nation = X1, r.P = `Growth (2012-2040)`) %>%
+    select(nation, r.P) %>%
+    dplyr::filter(! is.na(nation)) %>%
+    mutate(r.P = r.P %>% str_extract('^.*?(?=%$)') %>% as.numeric() / 100)
+
+  g <- read_csv('data/World_gross_domestic_product_(GDP)_per_capita_by_region_expressed_in_purchasing_power_parity.csv', skip = 4,
+                na = c('NA','N/A','')) %>%
+    rename(nation = X1, r.g = `Growth (2012-2040)`) %>%
+    select(nation, r.g) %>%
+    dplyr::filter(! is.na(nation)) %>%
+    mutate(r.g = r.g %>% str_extract('^.*?(?=%$)') %>% as.numeric() / 100)
+
+  top.down <- P %>% full_join(g, by = 'nation') %>%
+    translate_nations()
+  invisible(top.down)
+}
+
 export_kaya <- function(kaya, country) {
   x <- country
   data <- kaya %>% filter(country == x) %>%
