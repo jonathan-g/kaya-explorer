@@ -186,9 +186,14 @@ shinyServer(function(input, output, session) {
   })
 
   top_down_trends <- reactive({
-    td <- top_down %>% dplyr::filter(country == input$country)
+    vars <- c(r.P = 'P', r.g = 'g', r.e = 'e', r.G = 'G', r.E = 'E')
+    td <- top_down
+    td <- td %>% dplyr::filter(country == input$country) %>%
+      mutate(r.G = r.P + r.g, r.E = r.G + r.e) %>%
+      gather(key = variable, value = growth.rate, -country) %>%
+      mutate(variable = str_replace_all(variable, fixed(vars)))
     if (nrow(td) == 0) {
-      td  <- NULL
+      td  <- data.frame(variable = vars, growth.rate = NA)
     }
     td
   })
@@ -226,6 +231,18 @@ shinyServer(function(input, output, session) {
     t
   })
 
+  forecast_top_down <- reactive({
+    t <- top_down_trends() %>% mutate(variable = ordered(variable, levels = variable))
+    current_yr <- current_year()
+    ks <- kaya_subset() %>% filter(year == current_yr) %>%
+      select_(.dots = as.character(t$variable)) %>%
+      gather(key = variable, value = current)
+    t <- merge(t, ks) %>%
+      mutate(projected = current * exp((input$target_yr - current_yr) * growth.rate)) %>%
+      arrange(variable)
+    t
+  })
+
   implied_decarb_rate <- reactive({
     ks <- kaya_subset() %>% mutate(cat = 'Historical')
     fcast <- forecast()
@@ -238,9 +255,11 @@ shinyServer(function(input, output, session) {
 
     rate = log(target_em / current_em) / delta_yr - rate_G
 
-    message("target_em = ", prt(target_em,0), ", rate_G = ",
-            prt(rate_G * 100, 2), "%, target ef rate  = ",
-            prt(rate * 100,2), "%")
+    if (FALSE) {
+      message("target_em = ", prt(target_em,0), ", rate_G = ",
+              prt(rate_G * 100, 2), "%, target ef rate  = ",
+              prt(rate * 100,2), "%")
+    }
     rate
   })
 
@@ -254,7 +273,9 @@ shinyServer(function(input, output, session) {
 
     rate <- implied_decarb_rate()
 
-    message("implied decarb rate = ", prt(100 * rate, 2), "%")
+    if (FALSE) {
+      message("implied decarb rate = ", prt(100 * rate, 2), "%")
+    }
 
     mdl <- lm(log(ef) ~ year, data = filter(ks, year >= input$trend_start_year))
 
@@ -410,7 +431,9 @@ shinyServer(function(input, output, session) {
                               simplify()) %>%
       select(Variable = variable, `Goodness of Fit` = goodness)
 
-    message(print(t))
+    if (FALSE) {
+      message(print(t))
+    }
 
     ft <- FlexTable(t, header.cell.props = answer.head.props,
                     body.cell.props = answer.body.props)
@@ -651,8 +674,23 @@ shinyServer(function(input, output, session) {
   output$top_down_growth_table <- renderFlexTableIf({
     td <- top_down_trends()
     if(is.null(td)) {
-      NULL
+      ft <- NULL
     } else {
+      fcast <- forecast_top_down()
+      current_yr <- current_year()
+      fcast <- fcast %>% mutate(growth.pct = str_c(prt(growth.rate * 100, 2), '%'),
+                                current = prt(current, 3, format = 'fg'),
+                                projected = prt(projected, 3, format = 'fg')) %>%
+        select(variable, growth.pct, current, projected) %>%
+        mutate(variable = add_units(variable))
+      names(fcast) <- c('', 'Rate of Change', paste0('Current (', current_yr, ')'),
+                        paste0('Projected (', input$target_yr, ')'))
+      ft <- FlexTable(fcast)
+      ft[,, to='header'] <- parCenter()
+      ft[,1] <- parCenter()
+      ft[,2:ncol(fcast)] <- parRight()
+    }
+    if (FALSE) {
       message("td: ", str_c(names(td), " = ", td, collapse = ", "))
       td <- td %>% rename(P = r.P, g = r.g, e = r.e) %>%
         mutate(P = 100 * P, g = 100 * g, e = 100 * e,
@@ -666,8 +704,8 @@ shinyServer(function(input, output, session) {
       ft[,1] <- parCenter()
       ft[,2] <- parRight()
       ft[,,to='header'] <- parCenter()
-      ft
     }
+    ft
   })
 
   output$fuel_dist <- renderText({
@@ -707,7 +745,9 @@ shinyServer(function(input, output, session) {
     labels <- fd %>% mutate(label = str_c(fuel, ": ", prt(quads,2), " quads (", prt(pct,1), "%)")) %>%
       arrange(fuel) %>% select(fuel, label) %>%
       spread(key = fuel, value = label) %>% unlist()
-    message(paste0(levels(fd$fuel), collapse=", "))
+    if (FALSE) {
+      message(paste0(levels(fd$fuel), collapse=", "))
+    }
     ggplot(fd, aes(ymin = qmin, ymax = qmax, fill = fuel)) +
       geom_rect(xmin = 2, xmax = 4) +
       coord_polar(theta = "y") +
@@ -755,7 +795,9 @@ shinyServer(function(input, output, session) {
   }
 
   decarb_tooltip <- function(x) {
-    message("decarb_tooltip: x = ", paste(names(x), " = ", x, collapse = ', '))
+    if (FALSE) {
+      message("decarb_tooltip: x = ", paste(names(x), " = ", x, collapse = ', '))
+    }
     if (is.null(x)) return(NULL)
     if (is.null(x$id)) return(NULL)
     df <- isolate(implied_decarb())
@@ -800,11 +842,11 @@ shinyServer(function(input, output, session) {
     var <- input$trend_variable
     ty <- input$trend_start_year
     k <- kaya_subset() %>% filter(year >= ty)
-    message("Var = ", var, " data has ", nrow(k), " rows")
+    # message("Var = ", var, " data has ", nrow(k), " rows")
     f <- substitute(log(x) ~ year, list(x = as.symbol(input$trend_variable)))
     if (nrow(k) > 0) {
       trend <- lm(as.formula(f), data = k)
-      message(summary(trend))
+      # message(summary(trend))
     } else {
       trend <- NULL
     }
@@ -857,7 +899,7 @@ shinyServer(function(input, output, session) {
   })
 
   decarb_plot <- reactive({
-    message("Starting decarb_plot")
+    # message("Starting decarb_plot")
     xvar_name <- 'Year'
     yvar_name <- 'CO2 intensity (tonnes / $1000 GDP)'
 
@@ -882,7 +924,7 @@ shinyServer(function(input, output, session) {
       scale_nominal("stroke", range = brewer.pal(3, "Dark2"), sort = TRUE) %>%
       scale_nominal("fill", range = brewer.pal(3, "Dark2"), sort = TRUE) %>%
       set_options(width="auto", height="auto", resizable = FALSE)
-    message("plot created")
+    # message("plot created")
     plot
   })
 
