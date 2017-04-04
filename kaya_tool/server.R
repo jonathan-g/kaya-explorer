@@ -60,7 +60,11 @@ kaya$id <- seq_len(nrow(kaya))
 
 top_down <- load_top_down()
 
-countries <- as.character(unique(kaya$country))
+energy_by_fuel <- load_energy_by_fuel()
+
+kaya_countries <- as.character(unique(kaya$country))
+td_countries <- as.character(unique(top_down$country)) %>% keep(~.x %in% kaya_countries)
+ebf_countries <- as.character(unique(energy_by_fuel$country)) %>% keep(~.x %in% kaya_countries)
 
 kaya_labels <- data.frame(
   variable = c('P','G','E','F','g','e', 'f', 'ef'),
@@ -68,12 +72,12 @@ kaya_labels <- data.frame(
            '$1000 per person', 'quad per $trillion', 'MMT per quad',
            'metric ton per $ million'),
   long.unit = c('billion people', 'trillion dollars', 'quad','million metric tons CO2',
-           '$1000 per person', 'quad of energy per $trillion  GDP', 'million metric tons CO2 per quad',
-           'metric ton CO2 per million dollars GDP'),
+                '$1000 per person', 'quad of energy per $trillion  GDP', 'million metric tons CO2 per quad',
+                'metric ton CO2 per million dollars GDP'),
   long.long = c('Population', 'GDP', 'Energy consumption', 'Emissions',
-           'Per-capita GDP', 'Energy intensity of the economy',
-           'CO2 intensity of the energy supply',
-           'CO2 intensity of the economy'),
+                'Per-capita GDP', 'Energy intensity of the economy',
+                'CO2 intensity of the energy supply',
+                'CO2 intensity of the economy'),
   long = c('Population', 'GDP', 'Energy consumption', 'Emissions',
            'Per-capita GDP', 'Energy intensity',
            'CO2 intensity of energy',
@@ -84,7 +88,6 @@ kaya_labels <- data.frame(
   stringsAsFactors = FALSE
 )
 
-energy_by_fuel <- load_energy_by_fuel()
 
 prt <- function(x, digits = NULL, big.mark = ',', format = 'f') {
   formatC(x, digits = digits, big.mark = big.mark, format = format)
@@ -108,16 +111,48 @@ renderFlexTableIf <- function(expr, ..., env = parent.frame(), quoted = FALSE)
 }
 
 shinyServer(function(input, output, session) {
+  countries <- reactive({
+  c_list <- kaya_countries
+  if (input$tabs == 'Top Down') { c_list <- td_countries} else
+    if (input$tabs == 'Energy Mix') { c_list <- ebf_countries }
+  c_list
+  })
+
   observe({
-    updateSelectInput(session, 'country', choices = unique(countries))
+    ctry <- input$country
+    if (is.null(ctry)) {
+      message("NULL country")
+      ctry <- 'World'
+    } else if (ctry == '') {
+      message('Empty country')
+      ctry <- 'World'
+    }
+    updateSelectInput(session, 'country', choices = countries(), selected = ctry)
   })
 
   kaya_subset <- reactive({
     ctry <- input$country
-    if (! ctry %in% kaya$country)
+    if (! ctry %in% kaya_countries)
       ctry <- 'World'
     ks <- kaya  %>% filter(country == ctry) %>% arrange(year)
     ks
+  })
+
+  observe ({
+    if (input$country %in% td_countries) {
+      message("enabling top down")
+      js$enableTab("Top Down")
+    } else {
+      message("disabling top down")
+      js$disableTab("Top Down")
+    }
+    if (input$country %in% ebf_countries) {
+      message("enabling energy mix")
+      js$enableTab("Energy Mix")
+    } else {
+      message("disabling energy mix")
+      js$disableTab("Energy Mix")
+    }
   })
 
   observe({
@@ -134,7 +169,6 @@ shinyServer(function(input, output, session) {
     v <- min(max(input$trend_start_year, ks.min.yr), ks.max.yr)
     updateNumericInput(session, 'trend_start_year',
                        min = ks.min.yr, max = ks.max.yr, step = 1, value = v)
-
   })
 
   current_year <- reactive({

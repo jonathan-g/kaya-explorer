@@ -9,17 +9,47 @@ if (!require(pacman)) install.packages('pacman')
 library(pacman)
 
 p_load(shiny)
+p_load(shinyjs)
 p_load(DT)
 p_load(ggvis)
 
 enable_answers <- FALSE
 enable_topdown <- FALSE
 
+
+jscode <- "
+shinyjs.disableTab = function(name) {
+  var tab = $('.nav li a[data-value=\"' + name + '\"]');
+  tab.bind('click.tab', function(e) {
+    e.preventDefault();
+    return false;
+  });
+  tab.addClass('disabled');
+}
+
+shinyjs.enableTab = function(name) {
+  var tab = $('.nav li a[data-value=\"' + name + '\"]');
+  tab.unbind('click.tab');
+  tab.removeClass('disabled');
+}
+"
+
+css <- "
+.nav li a.disabled {
+  background-color: #fff !important;
+  color: #aaa !important;
+  cursor: not-allowed !important;
+  border-color: #aaa !important;
+}"
+
 shinyUI(fluidPage(
 
   # Application title
   titlePanel("Decarbonization Homework"),
   withMathJax(),
+  useShinyjs(),
+  extendShinyjs(text = jscode),
+  inlineCSS(css),
 
   # Sidebar with a slider input for number of bins
   sidebarLayout(
@@ -49,7 +79,7 @@ shinyUI(fluidPage(
       htmlOutput('target_emissions')
     ),
     mainPanel(
-      tabsetPanel(type="tabs",
+      tabsetPanel(id = "tabs", type="tabs",
                   tabPanel("Trends",
                            h3(textOutput("tab_title_trend", inline = TRUE)),
                            fluidRow(
