@@ -9,6 +9,7 @@ if (!require(pacman)) install.packages('pacman')
 library(pacman)
 
 p_load(shiny)
+p_load(V8)
 p_load(shinyjs)
 p_load(DT)
 p_load(ggvis)

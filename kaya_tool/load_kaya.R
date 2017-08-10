@@ -8,8 +8,9 @@ p_load(stringr)
 
 mtoe = 1 / 25.2 # quads
 data.dir <- 'data'
+data_dir <- data.dir
 
-load_kaya <- function() {
+load_kaya <- function(data.dir = data_dir) {
   population <- read.csv(file.path(data.dir, 'HistoricalPopulationValues.csv'), skip=12, header=T, stringsAsFactors=F)
   countries <- population[,1:4]
   countries[is.na(countries)] <- ''
@@ -62,6 +63,21 @@ load_kaya <- function() {
 
   energy %<>% mutate(country = str_replace(str_trim(country),"^(Total|Republic of) +",""))
 
+  sl <- read_csv(file.path(data.dir, 'sri_lanka.csv')) %>%
+    gather(key = Year, value = value, -c(Variable:Unit)) %>%
+    mutate(Year = as.integer(Year),
+           Variable = str_replace_all(Variable, c("CO2 Emissions" = 'carbon.emissions',
+                                                  "Primary Energy Production" = "energy.production",
+                                                  "Primary Energy Consumption" = "energy.consumption"))
+           ) %>%
+    select(-Unit) %>%
+    rename_all(funs(str_to_lower(.))) %>%
+    spread(key = variable, value = value) %>%
+    mutate(carbon.emissions = carbon.emissions * 12 / (12 + 32)) %>%
+    select(country, year, carbon.emissions, energy.consumption)
+
+
+  energy %<>% bind_rows(sl)
 
   dict1 <- c('US' = "United States")
   dict2 <- c('Asia and Oceania' = 'Asia Pacific')
@@ -126,12 +142,14 @@ translate_nations <- function(df) {
                "Japan", "South Korea",
                "Australia/New Zealand", "Australia/New Zealand",
                "Russia", "China", "India",
+               "Sri Lanka",
                "Brazil", "Total World"),
     country = c("United States", "Canada",
                 "Mexico", "Chile",
                 "Japan", "South Korea",
                 "Australia", "New Zealand",
                 "Russia", "China", "India",
+                "Sri Lanka",
                 "Brazil", "World")
   )
 
