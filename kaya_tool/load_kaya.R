@@ -63,21 +63,23 @@ load_kaya <- function(data.dir = data_dir) {
 
   energy %<>% mutate(country = str_replace(str_trim(country),"^(Total|Republic of) +",""))
 
-  sl <- read_csv(file.path(data.dir, 'sri_lanka.csv')) %>%
-    gather(key = Year, value = value, -c(Variable:Unit)) %>%
-    mutate(Year = as.integer(Year),
-           Variable = str_replace_all(Variable, c("CO2 Emissions" = 'carbon.emissions',
-                                                  "Primary Energy Production" = "energy.production",
-                                                  "Primary Energy Consumption" = "energy.consumption"))
-           ) %>%
-    select(-Unit) %>%
-    rename_all(funs(str_to_lower(.))) %>%
-    spread(key = variable, value = value) %>%
-    mutate(carbon.emissions = carbon.emissions * 12 / (12 + 32)) %>%
-    select(country, year, carbon.emissions, energy.consumption)
+  if (file.exists(file.path(data.dir, 'sri_lanka.csv'))) {
+    sl <- read_csv(file.path(data.dir, 'sri_lanka.csv')) %>%
+      gather(key = Year, value = value, -c(Variable:Unit)) %>%
+      mutate(Year = as.integer(Year),
+             Variable = str_replace_all(Variable, c("CO2 Emissions" = 'carbon.emissions',
+                                                    "Primary Energy Production" = "energy.production",
+                                                    "Primary Energy Consumption" = "energy.consumption"))
+      ) %>%
+      select(-Unit) %>%
+      rename_all(funs(str_to_lower(.))) %>%
+      spread(key = variable, value = value) %>%
+      mutate(carbon.emissions = carbon.emissions * 12 / (12 + 32)) %>%
+      select(country, year, carbon.emissions, energy.consumption)
 
 
-  energy %<>% bind_rows(sl)
+    energy %<>% bind_rows(sl)
+  }
 
   dict1 <- c('US' = "United States")
   dict2 <- c('Asia and Oceania' = 'Asia Pacific')
