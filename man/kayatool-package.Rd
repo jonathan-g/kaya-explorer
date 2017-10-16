@@ -18,7 +18,7 @@ identity of many nations around the world.
 \section{Bug reports}{
 
 \itemize{
- \item kayatool issue tracker (\url{https://github.com/gilligan-ees-3310/kayatool/issues})
+ \item kayatool issue tracker (\url{https://github.com/gilligan-ees-3310/kaya-tool/issues})
 }
 }
 
