@@ -1,0 +1,27 @@
+Package: kayatool
+Type: Package
+Title: Interactive Explorer for Kaya Identity
+Version: 0.1.0
+Authors@R: c(person("Jonathan", "Gilligan", role = c("aut", "cre"),
+                    email = "jonathan.gilligan@vanderbilt.edu"))
+Description: A Shiny-based explorer for Kaya identity. 
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Depends: 
+  R (>= 3.4),
+  shiny
+Imports:
+  broom,
+  DT,
+  ggvis,
+  grid,
+  lazyeval,
+  magrittr,
+  RColorBrewer,
+  readxl,
+  rtable,
+  shinyjs,
+  stringr,
+  tidyverse
+RoxygenNote: 6.0.1
