@@ -26,10 +26,10 @@
 #'
 #' @examples
 #' \dontrun{
-#' launch_kt()
+#' launch_kaya_tool()
 #' }
 #'
-launch_kt <- function(rstudio = getOption("kaya_tool.rstudio"), ...) {
+launch_kaya_tool <- function(rstudio = getOption("kaya_tool.rstudio"), ...) {
   message("\nLaunching kayatool interface.")
   invisible(launch(rstudio, ...))
 }

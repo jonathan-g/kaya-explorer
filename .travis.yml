@@ -1,0 +1,4 @@
+language: r
+sudo: required
+cache: packages
+after_failure: "cat /home/travis/build/jonathan-g/kayatool/kayatool.Rcheck/00install.out"
