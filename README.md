@@ -1,6 +1,8 @@
 kayatool
 ========
 
+![Build Status](https://travis-ci.org/gilligan-ees-3310/kaya-tool.svg?branch=master)
+
 The `kayatool` package is an R Shiny package to interactively explore the Kaya identity for a number of countries and regions of the world.
 
 Installation
