@@ -932,7 +932,7 @@ shinyServer(function(input, output, session) {
   decarb_plot <- reactive({
     # message("Starting decarb_plot")
     xvar_name <- 'Year'
-    yvar_name <- 'CO2 intensity (tonnes / $1000 GDP)'
+    yvar_name <- 'CO2 intensity (tonnes / $ million GDP)'
 
     if (is.na(history_start())) {
       x_tics <- NULL
