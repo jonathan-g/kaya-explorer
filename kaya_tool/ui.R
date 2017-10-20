@@ -46,7 +46,7 @@ css <- "
 shinyUI(fluidPage(
 
   # Application title
-  titlePanel("Decarbonization Homework"),
+  titlePanel("Decarbonization Explorer"),
   withMathJax(),
   useShinyjs(),
   extendShinyjs(text = jscode),
