@@ -2,6 +2,7 @@ library(magrittr)
 library(tidyverse)
 library(readxl)
 library(stringr)
+library(janitor)
 
 
 mtoe = 1 / 25.2 # quads
