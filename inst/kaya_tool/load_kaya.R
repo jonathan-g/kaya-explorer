@@ -125,8 +125,8 @@ load_top_down <- function() {
     mutate(r.e = r.e %>% str_extract('^.*?(?=%$)') %>% as.numeric() / 100)
 
   top.down <- P %>% full_join(g, by = 'nation') %>%
-    full_join(e, by = 'nation') %>%
-    translate_nations()
+    full_join(e, by = 'nation')
+  # top.down <- translate_nations(top.down)
   invisible(top.down)
 }
 
