@@ -1,12 +1,8 @@
-if (!require(pacman)) install.packages('pacman')
-library(pacman)
+library(magrittr)
+library(tidyverse)
+# library(grid)
+library(lazyeval)
 
-p_load(tidyverse)
-p_load(readxl)
-p_load(magrittr)
-p_load(stringr)
-p_load(grid)
-p_load(lazyeval)
 
 kaya_plot <- function(kaya, countries, v, y_lab = NULL) {
   labels <- c(P =  'Population (billions)',

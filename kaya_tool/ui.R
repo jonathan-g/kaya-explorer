@@ -5,14 +5,11 @@
 # http://shiny.rstudio.com
 #
 
-if (!require(pacman)) install.packages('pacman')
-library(pacman)
-
-p_load(shiny)
-p_load(V8)
-p_load(shinyjs)
-p_load(DT)
-p_load(ggvis)
+library(shiny)
+# library(V8)
+library(shinyjs)
+library(DT)
+library(ggvis)
 
 enable_answers <- FALSE
 enable_topdown <- FALSE
@@ -48,9 +45,9 @@ shinyUI(fluidPage(
   # Application title
   titlePanel("Decarbonization Explorer"),
   withMathJax(),
-  useShinyjs(),
-  extendShinyjs(text = jscode),
-  inlineCSS(css),
+  shinyjs::useShinyjs(),
+  shinyjs::extendShinyjs(text = jscode),
+  shinyjs::inlineCSS(css),
 
   # Sidebar with a slider input for number of bins
   sidebarLayout(
@@ -141,17 +138,19 @@ shinyUI(fluidPage(
                              ggvisOutput('implied_decarb_plot')
                            )
                   ),
-                  tabPanel("Top Down",
-                           h3(textOutput('tab_title_top_down')),
-                           div(
-                             tableOutput('top_down_growth_table')
-                             )
-                           ),
+                  # tabPanel("Top Down",
+                  #          h3(textOutput('tab_title_top_down')),
+                  #          div(
+                  #            tableOutput('top_down_growth_table')
+                  #            )
+                  #          ),
                   tabPanel("Energy Mix",
                            h3(textOutput('tab_title_fuel_dist')),
                            div(
                              # htmlOutput('fuel_dist'),
                              tableOutput('fuel_dist_table'),
+                             br(),
+                             downloadButton('downloadFuelData', 'Download'),
                              br(),
                              plotOutput('fuel_dist_plot')
                            )

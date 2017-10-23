@@ -4,20 +4,17 @@
 # http://shiny.rstudio.com
 #
 
-if (!require(pacman)) install.packages('pacman')
-library(pacman)
-p_load(shiny)
-p_load(tidyverse)
-p_load(magrittr)
-p_load(broom)
-p_load(stringr)
-p_load(rtable)
-p_load(DT)
-p_load(ggvis)
-p_load(RColorBrewer)
+library(shiny)
+library(tidyverse)
+library(ggvis)
+library(stringr)
+library(rtable)
+library(broom)
+library(RColorBrewer)
+library(DT)
 
 source('load_kaya.R')
-source('energy_by_fuel.R')
+# source('energy_by_fuel.R')
 
 goodness_of_fit <- function(r.squared) {
   gof <- NA
@@ -54,7 +51,7 @@ answer.head.props <- cellProperties(padding.top = 2,
                                     padding.left = 2, padding.right = 2,
                                     background.color = answer.bg)
 
-kaya <- load_kaya()$kaya %>% mutate(F = c.to.co2(F), f = c.to.co2(f), ef = c.to.co2(ef))
+kaya <- load_kaya() %>% mutate(F = c.to.co2(F), f = c.to.co2(f), ef = c.to.co2(ef))
 
 kaya$id <- seq_len(nrow(kaya))
 
@@ -249,7 +246,7 @@ shinyServer(function(input, output, session) {
       }
       fd <- fd %>% filter(year == y)
     }
-    # message(print(fd))
+    message(print(fd))
     invisible(fd)
   })
 
@@ -366,6 +363,22 @@ shinyServer(function(input, output, session) {
       write_csv(
         kaya_subset() %>% select(-country, -geography, -id),
         path = file)
+    })
+
+  output$downloadFuelData <- downloadHandler(
+    filename = function() {
+      input$country %>% str_replace_all('[^A-Za-z0-9]+', '_') %>% str_c('_fuel.csv')
+    },
+    content = function(file) {
+      df <- fuel_dist() %>% mutate(quads = round(quads, 2), pct = round(pct, 2)) %>%
+        dplyr::select(Fuel = fuel, Quads = quads, Percent = pct) %>%
+        arrange(Fuel)
+      df_total = summarize(df, Fuel = 'Total', Quads = sum(Quads), Percent = sum(Percent))
+
+      df <- df %>% bind_rows(df_total)
+      message("df has ", nrow(df), " rows")
+      message("file = ", file)
+      write_csv(df, path = file)
     })
 
   output$policy_goal <- renderText({
@@ -730,7 +743,7 @@ shinyServer(function(input, output, session) {
         mutate(P = 100 * P, g = 100 * g, e = 100 * e,
                G = P + g, E = G + e) %>%
         select(-country) %>%
-        mutate_each(funs(prt(., 2) %>% str_c('%'))) %>%
+        mutate_all(funs(prt(., 2) %>% str_c('%'))) %>%
         gather(key = Parameter, value = `Growth rate`) %>%
         mutate(Parameter = ordered(Parameter, levels = c('P', 'g', 'e', 'G', 'E')))
 
@@ -759,8 +772,9 @@ shinyServer(function(input, output, session) {
       df <- df %>% mutate(quads = round(quads, 2), pct = round(pct, 1)) %>%
         dplyr::select(Fuel = fuel, Quads = quads, '%' = pct) %>%
         arrange(Fuel)
+      df_total = summarize(df, Fuel = 'Total', Quads = sum(Quads), `%` = sum(`%`))
 
-      df <- df %>% bind_rows(summarize(df, Fuel = 'Total', Quads = sum(Quads), `%` = sum(`%`)))
+      df <- df %>% bind_rows(df_total)
       ft <- FlexTable(df, header.cell.props = normal.head.props, body.cell.props = normal.body.props)
       ft[,] <- parRight()
       ft[,,to='header'] <- parCenter()
