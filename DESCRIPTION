@@ -25,5 +25,6 @@ Imports:
   rtable,
   shinyjs,
   stringr,
-  tidyverse
+  tidyverse,
+  janitor
 RoxygenNote: 6.0.1
