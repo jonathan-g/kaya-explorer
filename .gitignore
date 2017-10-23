@@ -5,3 +5,5 @@
 .Ruserdata
 ~*.xls*
 ~*.doc*
+.Rproj.user
+inst/kaya_tool/data/old/
