@@ -976,7 +976,8 @@ shinyServer(function(input, output, session) {
       x_tics <- seq(10 * round(history_start() / 10),
                     10 * round(input$target_yr / 10), 10)
     }
-    plot <- implied_decarb %>%
+    message("Setting up implied decarbonization plot")
+    plot <- implied_decarb() %>%
       ggvis(x = ~year, y = ~ef) %>%
       group_by(cat) %>%
       layer_lines(strokeWidth := 2, stroke = ~cat) %>%
@@ -987,10 +988,14 @@ shinyServer(function(input, output, session) {
       scale_numeric("x", nice=TRUE) %>%
       add_axis("y", title = yvar_name) %>%
       scale_numeric("y", nice=FALSE, zero=TRUE) %>%
-      scale_nominal("stroke", range = brewer.pal(3, "Dark2"), sort = TRUE) %>%
-      scale_nominal("fill", range = brewer.pal(3, "Dark2"), sort = TRUE) %>%
+      scale_nominal("stroke", range = brewer.pal(3, "Dark2")[c(2,3,1)], sort = FALSE,
+                    domain = c("Historical", "Historical Trend", "Bottom-up"),
+                               label = NA) %>%
+      scale_nominal("fill", range = brewer.pal(3, "Dark2")[c(2,3,1)], sort = FALSE,
+                    domain = c("Historical", "Historical Trend", "Bottom-up"),
+                    label = NA) %>%
       set_options(width="auto", height="auto", resizable = FALSE)
-    # message("plot created")
+    message("plot created")
     plot
   })
 
