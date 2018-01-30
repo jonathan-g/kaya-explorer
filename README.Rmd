@@ -37,3 +37,23 @@ Once you have loaded the package, you can launch it from RStudio with
 ```
 launch_kaya_tool()
 ```
+
+## Credits
+
+The concept for this tool originated in Roger Pielke's book, 
+[_The Climate Fix_](https://books.google.com/books/about/The_Climate_Fix.html?id=WgcCoYsR41IC)
+and the tool follows the analysis presented in chapters 3--4 of that book.
+
+See also, 
+
+* R.A. Pielke, Jr., "[The British Climate Change Act: A Critical 
+Evaluation and Proposed Alternative Approach](https://doi.org/10.1088/1748-9326/4/2/024010)," Environ. Res. Lett. _4_,
+024010 (2009). 
+doi [10.1088/1748-9326/4/2/024010](https://doi.org/10.1088/1748-9326/4/2/024010)
+* R.A. Pielke, Jr., "[Mamizu Climate Policy: An Evaluation of Japanese 
+Carbon Emissions Reduction Targets](https://doi.org/10.1088/1748-9326/4/4/044001),"
+Environ. Res. Lett. _4_, 044001 (2009).
+doi [10.1088/1748-9326/4/4/044001](https://doi.org/10.1088/1748-9326/4/4/044001)
+* R.A. Pielke, Jr., "[An evaluation of the targets and timetables of proposed Australian emissions reduction policies](https://doi.org/10.1016/j.envsci.2010.10.008)," Environ. Sci. & Pol.
+_14_, 20--27 (2011).
+doi [10.1016/j.envsci.2010.10.008](https://doi.org/10.1016/j.envsci.2010.10.008)
