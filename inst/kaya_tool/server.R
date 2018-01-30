@@ -391,7 +391,7 @@ shinyServer(function(input, output, session) {
     if ('analysis' %in% names(input)) {
       title <- c(top.down = "Top Down", bottom.up = "Bottom up")[input$analysis]
     } else {
-      title <- 'Bottom up'
+      title <- 'Decarbonization'
     }
     as.character(h4(strong(str_c(title, " Analysis"))))
   })
