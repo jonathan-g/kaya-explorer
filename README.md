@@ -45,16 +45,16 @@ See also,
 
 -   R.A. Pielke, Jr., “[The British Climate Change Act: A Critical
     Evaluation and Proposed Alternative
-    Approach](https://doi.org/10.1088/1748-9326/4/2/024010),” Environ.
-    Res. Lett. *4*, 024010 (2009). doi
+    Approach](https://doi.org/10.1088/1748-9326/4/2/024010),” *Environ.
+    Res. Lett.* **4**, 024010 (2009). doi
     [10.1088/1748-9326/4/2/024010](https://doi.org/10.1088/1748-9326/4/2/024010)
 -   R.A. Pielke, Jr., “[Mamizu Climate Policy: An Evaluation of Japanese
     Carbon Emissions Reduction
-    Targets](https://doi.org/10.1088/1748-9326/4/4/044001),” Environ.
-    Res. Lett. *4*, 044001 (2009). doi
+    Targets](https://doi.org/10.1088/1748-9326/4/4/044001),” *Environ.
+    Res. Lett.* **4**, 044001 (2009). doi
     [10.1088/1748-9326/4/4/044001](https://doi.org/10.1088/1748-9326/4/4/044001)
 -   R.A. Pielke, Jr., “[An Evaluation of the Targets and Timetables of
     Proposed Australian Emissions Reduction
-    policies](https://doi.org/10.1016/j.envsci.2010.10.008),” Environ.
-    Sci. & Pol. *14*, 20–27 (2011). doi
+    policies](https://doi.org/10.1016/j.envsci.2010.10.008),” *Environ.
+    Sci. & Pol.* **14**, 20–27 (2011). doi
     [10.1016/j.envsci.2010.10.008](https://doi.org/10.1016/j.envsci.2010.10.008)
