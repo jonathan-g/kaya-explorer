@@ -115,7 +115,7 @@ shinyServer(function(input, output, session) {
   c_list
   })
 
-  observe({
+  observeEvent(input$country, {
     ctry <- input$country
     if (is.null(ctry)) {
       message("NULL country")
@@ -127,7 +127,7 @@ shinyServer(function(input, output, session) {
     updateSelectInput(session, 'country', choices = countries(), selected = ctry)
   })
 
-  kaya_subset <- reactive({
+  kaya_subset <- eventReactive(input$country, {
     ctry <- input$country
     if (! ctry %in% kaya_countries)
       ctry <- 'World'
@@ -135,7 +135,7 @@ shinyServer(function(input, output, session) {
     ks
   })
 
-  observe ({
+  observeEvent(input$country, {
     if (input$country %in% td_countries) {
       message("enabling top down")
       js$enableTab("Top Down")
@@ -152,14 +152,22 @@ shinyServer(function(input, output, session) {
     }
   })
 
-  observe({
+  last_event_time <- eventReactive( any(input$target_yr, input$target_reduc,
+                                        input$ref_yr, input$trend_start_year,
+                                        input$country),
+                 {
+                   proc.time()['elapsed']
+                 })
+
+  observeEvent( kaya_subset(), {
     ks <- kaya_subset()
     ks.min.yr <- min(ks$year)
     ks.max.yr <- max(ks$year)
     v <- input$ref_yr
-    v <- min(max(input$ref_yr, ks.min.yr), ks.max.yr)
+    v2 <- min(max(v, ks.min.yr), ks.max.yr)
+
     updateNumericInput(session, 'ref_yr',
-                       min = ks.min.yr, max = ks.max.yr, step = 1, value = v)
+                       min = ks.min.yr, max = ks.max.yr, step = 1, value = v2)
     v <- max(input$target_yr, ks.max.yr)
     updateNumericInput(session, 'target_yr',
                        min = ks.max.yr, step = 1, value = v)
@@ -387,13 +395,17 @@ shinyServer(function(input, output, session) {
                       ifelse(input$target_reduc >= 0, 'below', 'above'), ' ', input$ref_yr)))
   })
 
-  output$trend_title <- renderText({
+  trend_title <- reactive({
     if ('analysis' %in% names(input)) {
       title <- c(top.down = "Top Down", bottom.up = "Bottom up")[input$analysis]
     } else {
       title <- 'Decarbonization'
     }
-    as.character(h4(strong(str_c(title, " Analysis"))))
+    str_c(title, " Analysis")
+  })
+
+  output$trend_title <- renderText({
+    as.character(h4(strong(trend_title())))
   })
 
   output$tab_title_trend <- renderText({
@@ -497,7 +509,9 @@ shinyServer(function(input, output, session) {
     paste0(strong("Step 3: "), "Calculate the projected values for ",
            em('P'), ", ", em('g'), ", ", em('e'), ", and ", em('f'),
            ", in ", input$target_yr, '.',
-           ' Show your work, and check your answers against the &ldquo;Bottom-up Analysis&rdquo; table on the left-hand panel.',
+           ' Show your work, and check your answers against the &ldquo;',
+           trend_title(),
+           '&rdquo; table on the left-hand panel.',
            ' (Remember to divide percentages by 100)')
   })
 
@@ -534,7 +548,9 @@ shinyServer(function(input, output, session) {
 
   output$step_4 <- renderText({
     paste0(strong("Step 4: "), "Multiply the variables together to get ", em("F"), " for each year.",
-           ' Show your work, and check your answers against the &ldquo;Bottom-up Analysis&rdquo; table on the left-hand panel.')
+           ' Show your work, and check your answers against the &ldquo;',
+           trend_title(),
+           '&rdquo; table on the left-hand panel.')
   })
 
   output$step_4_table <- renderFlexTableIf({
@@ -561,7 +577,9 @@ shinyServer(function(input, output, session) {
     target_yr <- input$target_yr
     target_reduc <- input$target_reduc
     paste0(strong("Step 5: "), "Look up emissions for ", ref_yr,
-           " under the &ldquo;Bottom up Analysis&rdquo; table on the left panel,",
+           " under the &ldquo;",
+           trend_title(),
+           "&rdquo; table on the left panel,",
            " or in the &ldquo;Historical&rdquo; tab,",
            " and calculate the target emissions for ", target_yr,
            " (", abs(target_reduc), "% ",
