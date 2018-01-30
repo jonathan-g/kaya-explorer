@@ -1,9 +1,11 @@
 kayatool
 ========
 
-**GitHub:** [![Build Status](https://travis-ci.org/gilligan-ees-3310/kayatool.svg?branch=master)](https://github.com/gilligan-ees-3310/kayatool/commits/master)
+**GitHub:** [![Build
+Status](https://travis-ci.org/gilligan-ees-3310/kayatool.svg?branch=master)](https://github.com/gilligan-ees-3310/kayatool/commits/master)
 
-**GitLab:** [![Build Status](https://gitlab.jgilligan.org/gilligan_teaching/ees_3310/ees_3310_software/kayatool/badges/master/build.svg)](https://gitlab.jgilligan.org/gilligan_teaching/ees_3310/ees_3310_software/kayatool/commits/master)
+**GitLab:** [![Build
+Status](https://gitlab.jgilligan.org/gilligan_teaching/ees_3310/ees_3310_software/kayatool/badges/master/build.svg)](https://gitlab.jgilligan.org/gilligan_teaching/ees_3310/ees_3310_software/kayatool/commits/master)
 
 The `kayatool` package is an R Shiny package to interactively explore
 the Kaya identity for a number of countries and regions of the world.
@@ -34,11 +36,10 @@ Once you have loaded the package, you can launch it from RStudio with
 Credits
 -------
 
-The concept for this tool originated in Roger Pielke’s book, [*The
-Climate
+This tool was inspired by Roger Pielke’s book, [*The Climate
 Fix*](https://books.google.com/books/about/The_Climate_Fix.html?id=WgcCoYsR41IC)
-and the tool follows the analysis presented in chapters 3–4 of that
-book.
+and the tool closely follows the analysis presented in chapters 3–4 of
+that book.
 
 See also,
 
@@ -52,8 +53,8 @@ See also,
     Targets](https://doi.org/10.1088/1748-9326/4/4/044001),” Environ.
     Res. Lett. *4*, 044001 (2009). doi
     [10.1088/1748-9326/4/4/044001](https://doi.org/10.1088/1748-9326/4/4/044001)
--   R.A. Pielke, Jr., “[An evaluation of the targets and timetables of
-    proposed Australian emissions reduction
+-   R.A. Pielke, Jr., “[An Evaluation of the Targets and Timetables of
+    Proposed Australian Emissions Reduction
     policies](https://doi.org/10.1016/j.envsci.2010.10.008),” Environ.
     Sci. & Pol. *14*, 20–27 (2011). doi
     [10.1016/j.envsci.2010.10.008](https://doi.org/10.1016/j.envsci.2010.10.008)
