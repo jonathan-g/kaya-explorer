@@ -182,7 +182,8 @@ load_energy_by_fuel <- function() {
     rename(gas = natural_gas, nuclear = nuclear_energy, hydro = hydro_electric,
            renewables = renew_ables) %>%
     mutate(renewables = renewables + hydro) %>%
-    select(year, oil, gas, coal, nuclear, renewables)
+    select(year, oil, gas, coal, nuclear, renewables) %>%
+    mutate_at(vars(-year), funs(. * mtoe))
 
   energy_by_fuel = bind_rows(countries, countries) %>% bind_cols(ebf) %>%
     filter(!is.na(country)) %>%

@@ -1,14 +1,14 @@
 Package: kayatool
 Type: Package
 Title: Interactive Explorer for Kaya Identity
-Version: 0.2.0
+Version: 0.2.1
 Authors@R: c(person("Jonathan", "Gilligan", role = c("aut", "cre"),
                     email = "jonathan.gilligan@vanderbilt.edu"))
 Description: A Shiny-based explorer for Kaya identity. 
 License: MIT + file LICENSE
 Encoding: UTF-8
-URL: https://github.com/gilligan-ees-3310/kaya-tool/
-BugReports: https://github.com/gilligan-ees-3310/kaya-tool/issues/
+URL: https://github.com/gilligan-ees-3310/kayatool/
+BugReports: https://github.com/gilligan-ees-3310/kayatool/issues/
 LazyData: true
 Depends: 
   R (>= 3.4),
