@@ -7,7 +7,7 @@ library(janitor)
 
 mtoe = 1 / 25.2 # quads
 
-load_kaya <- function() {
+prepare_kaya <- function() {
   world_bank_translations = c(", +(Islamic|Arab) +Rep\\. *$" = "",
                               "^Korea, +Rep\\. *$" = "South Korea",
                               " +SAR, +China *$" = "",
@@ -103,7 +103,18 @@ load_kaya <- function() {
   invisible(kaya_data)
 }
 
-load_top_down <- function() {
+load_kaya <- function() {
+  kaya_data_file <- "data/kaya_data.Rds"
+  if (file.exists(kaya_data_file)) {
+    kaya_data <- read_rds(kaya_data_file)
+  } else {
+    kaya_data <- prepare_kaya()
+    write_rds(kaya_data, kaya_data_file, compress = "bz2")
+  }
+  invisible(kaya_data)
+}
+
+prepare_top_down <- function() {
   P <- read_csv('data/World_population_by_region.csv', skip = 4,
                 na = c('NA','N/A','')) %>%
     rename(nation = X1, r.P = `Growth (2012-2040)`) %>%
@@ -131,17 +142,28 @@ load_top_down <- function() {
   invisible(top.down)
 }
 
+load_top_down <- function() {
+  top_down_file <- "data/top_down.Rds"
+  if (file.exists(top_down_file)) {
+    top_down <- read_rds(top_down_file)
+  } else {
+   top_down <- prepare_top_down()
+   write_rds(top_down, top_down_file, compress = "bz2")
+  }
+  invisible(top_down)
+}
+
 export_kaya <- function(kaya, country) {
   x <- country
   data <- kaya %>% filter(country == x) %>%
     select(Year = year, P,G,E,F) %>%
     mutate(P = P * 1E+6, G = G * 1E+6, F = F * 44 / 12)
   filename <- paste(gsub(" +", "_", country), '.csv')
-  write.csv(data, file = filename, row.names=FALSE)
+  write_csv(data, file = filename)
 }
 
 
-load_energy_by_fuel <- function() {
+prepare_energy_by_fuel <- function() {
   bp_translations = c("^Total +" = "", "&" = "and", "of which: +" = "",
                       "^US$" = "United States", "Slovakia" = "Slovak Republic",
                       "China Hong Kong SAR" = "Hong Kong")
@@ -194,5 +216,16 @@ load_energy_by_fuel <- function() {
     group_by(country, year) %>% mutate(pct = 100 * quads / sum(quads, na.rm = T)) %>%
     ungroup()
 
+  invisible(energy_by_fuel)
+}
+
+load_energy_by_fuel <- function() {
+  e_by_f_file <- "data/energy_by_fuel.Rds"
+  if (file.exists(e_by_f_file)) {
+    energy_by_fuel <- read_rds(e_by_f_file)
+  } else {
+    energy_by_fuel <- prepare_energy_by_fuel()
+    write_rds(energy_by_fuel, e_by_f_file, compress = "bz2")
+  }
   invisible(energy_by_fuel)
 }
