@@ -101,7 +101,7 @@ prepare_kaya <- function() {
 }
 
 load_kaya <- function() {
-  kaya_data_file <- system.file(file.path("kayatool", "data", "kaya_data.Rds")
+  kaya_data_file <- file.path("kayatool", "data", "kaya_data.Rds")
   if (file.exists(kaya_data_file)) {
     kaya_data <- read_rds(kaya_data_file)
   } else {
@@ -112,8 +112,7 @@ load_kaya <- function() {
 }
 
 prepare_top_down <- function() {
-  pop_file <- system.file(file.path("kayatool", "data", "World_population_by_region.csv"),
-                          package="kayatool")
+  pop_file <- file.path("data", "World_population_by_region.csv")
   P <- read_csv(pop_file, skip = 4,
                 na = c('NA','N/A','')) %>%
     rename(nation = X1, r.P = `Growth (2012-2040)`) %>%
@@ -121,8 +120,7 @@ prepare_top_down <- function() {
     dplyr::filter(! is.na(nation)) %>%
     mutate(r.P = r.P %>% str_extract('^.*?(?=%$)') %>% as.numeric() / 100)
 
-  gdp_file <- system.file(file.path("kayatool", "data", "world_GDP_PPP.csv"),
-                          package="kayatool")
+  gdp_file <- file.path("data", "world_GDP_PPP.csv")
   g <- read_csv(gdp_file, skip = 4,
                 na = c('NA','N/A','')) %>%
     rename(nation = X1, r.g = `Growth (2012-2040)`) %>%
@@ -130,8 +128,7 @@ prepare_top_down <- function() {
     dplyr::filter(! is.na(nation)) %>%
     mutate(r.g = r.g %>% str_extract('^.*?(?=%$)') %>% as.numeric() / 100)
 
-  energy_file <- system.file(file.path("kayatool", "data", "World_energy_intensity_by_region.csv"),
-                             package="kayatool")
+  energy_file <- file.path("data", "World_energy_intensity_by_region.csv")
   e <- read_csv(energy_file, skip = 4,
                 na = c('NA','N/A','')) %>%
     rename(nation = X1, r.e = `Growth (2012-2040)`) %>%
@@ -146,7 +143,7 @@ prepare_top_down <- function() {
 }
 
 load_top_down <- function() {
-  top_down_file <- system.file(file.path("kayatool", "data", "top_down.Rds")
+  top_down_file <- file.path("data", "top_down.Rds")
   if (file.exists(top_down_file)) {
     top_down <- read_rds(top_down_file)
   } else {
@@ -222,8 +219,7 @@ prepare_energy_by_fuel <- function() {
 }
 
 load_energy_by_fuel <- function() {
-  e_by_f_file <- system.file(file.path("kayatool", "data", "energy_by_fuel.Rds"),
-                             package="kayatool")
+  e_by_f_file <- file.path("data", "energy_by_fuel.Rds")
   if (file.exists(e_by_f_file)) {
     energy_by_fuel <- read_rds(e_by_f_file)
   } else {
