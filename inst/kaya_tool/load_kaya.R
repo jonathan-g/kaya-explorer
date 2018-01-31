@@ -104,32 +104,39 @@ prepare_kaya <- function() {
 }
 
 load_kaya <- function() {
-  kaya_data_file <- "data/kaya_data.Rds"
+  kaya_data_file <- system.file(file.path("kayatool", "data", "kaya_data.Rds"),
+                                package = "kayatool")
   if (file.exists(kaya_data_file)) {
     kaya_data <- read_rds(kaya_data_file)
   } else {
     kaya_data <- prepare_kaya()
-    write_rds(kaya_data, kaya_data_file, compress = "bz2")
+    # write_rds(kaya_data, kaya_data_file, compress = "bz2")
   }
   invisible(kaya_data)
 }
 
 prepare_top_down <- function() {
-  P <- read_csv('data/World_population_by_region.csv', skip = 4,
+  pop_file <- system.file(file.path("kayatool", "data", "World_population_by_region.csv"),
+                          package="kayatool")
+  P <- read_csv(pop_file, skip = 4,
                 na = c('NA','N/A','')) %>%
     rename(nation = X1, r.P = `Growth (2012-2040)`) %>%
     select(nation, r.P) %>%
     dplyr::filter(! is.na(nation)) %>%
     mutate(r.P = r.P %>% str_extract('^.*?(?=%$)') %>% as.numeric() / 100)
 
-  g <- read_csv('data/world_GDP_PPP.csv', skip = 4,
+  gdp_file <- system.file(file.path("kayatool", "data", "world_GDP_PPP.csv"),
+                          package="kayatool")
+  g <- read_csv(gdp_file, skip = 4,
                 na = c('NA','N/A','')) %>%
     rename(nation = X1, r.g = `Growth (2012-2040)`) %>%
     select(nation, r.g) %>%
     dplyr::filter(! is.na(nation)) %>%
     mutate(r.g = r.g %>% str_extract('^.*?(?=%$)') %>% as.numeric() / 100)
 
-  e <- read_csv('data/World_energy_intensity_by_region.csv', skip = 4,
+  energy_file <- system.file(file.path("kayatool", "data", "World_energy_intensity_by_region.csv"),
+                             package="kayatool")
+  e <- read_csv(energy_file, skip = 4,
                 na = c('NA','N/A','')) %>%
     rename(nation = X1, r.e = `Growth (2012-2040)`) %>%
     select(nation, r.e) %>%
@@ -143,12 +150,13 @@ prepare_top_down <- function() {
 }
 
 load_top_down <- function() {
-  top_down_file <- "data/top_down.Rds"
+  top_down_file <- system.file(file.path("kayatool", "data", "top_down.Rds"),
+                               package = "kayatool")
   if (file.exists(top_down_file)) {
     top_down <- read_rds(top_down_file)
   } else {
    top_down <- prepare_top_down()
-   write_rds(top_down, top_down_file, compress = "bz2")
+   # write_rds(top_down, top_down_file, compress = "bz2")
   }
   invisible(top_down)
 }
@@ -220,12 +228,13 @@ prepare_energy_by_fuel <- function() {
 }
 
 load_energy_by_fuel <- function() {
-  e_by_f_file <- "data/energy_by_fuel.Rds"
+  e_by_f_file <- system.file(file.path("kayatool", "data", "energy_by_fuel.Rds"),
+                             package="kayatool")
   if (file.exists(e_by_f_file)) {
     energy_by_fuel <- read_rds(e_by_f_file)
   } else {
     energy_by_fuel <- prepare_energy_by_fuel()
-    write_rds(energy_by_fuel, e_by_f_file, compress = "bz2")
+    # write_rds(energy_by_fuel, e_by_f_file, compress = "bz2")
   }
   invisible(energy_by_fuel)
 }
