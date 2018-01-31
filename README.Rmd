@@ -31,7 +31,7 @@ library(kayatool)
 or use the `pacman` package to load `kayatool`, installing it first if necessary: 
 ```
 library(pacman)
-p_load_gh("gilligan-ees-3310/kayatool")
+p_load_current_gh("gilligan-ees-3310/kayatool")
 ```
 Once you have loaded the package, you can launch it from RStudio with
 ```
