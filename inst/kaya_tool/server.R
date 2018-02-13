@@ -225,12 +225,11 @@ shinyServer(function(input, output, session) {
   })
 
   top_down_trends <- reactive({
-    vars <- c(r.P = 'P', r.g = 'g', r.e = 'e', r.G = 'G', r.E = 'E')
     td <- top_down
     td <- td %>% dplyr::filter(country == input$country) %>%
-      mutate(r.G = r.P + r.g, r.E = r.G + r.e) %>%
+      mutate(g = G - P, e = E - G, f = F - E) %>%
       gather(key = variable, value = growth.rate, -country) %>%
-      mutate(variable = str_replace_all(variable, fixed(vars)))
+      mutate(growth.rate = growth.rate * 0.01)
     if (nrow(td) == 0) {
       td  <- data.frame(variable = vars, growth.rate = NA)
     }
