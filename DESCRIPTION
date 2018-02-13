@@ -28,4 +28,6 @@ Imports:
   stringr,
   tidyverse,
   kayadata
+Remotes:
+  gilligan-ees-3310/kayadata
 RoxygenNote: 6.0.1
