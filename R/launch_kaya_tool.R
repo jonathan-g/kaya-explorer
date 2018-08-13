@@ -18,7 +18,7 @@
 #' @param rstudio Only relevant for RStudio users. The default (\code{FALSE}) is
 #'   to launch the app in the user's default web browser rather than RStudio's
 #'   pop-up Viewer. Users can change the default to \code{TRUE} by setting the
-#'   global option \code{options(shinystan.rstudio = TRUE)}.
+#'   global option \code{options(kayatool.rstudio = TRUE)}.
 #' @param ... Optional arguments passed to \code{\link[shiny]{runApp}}.
 #'
 #' @return Nothing is returned
@@ -29,7 +29,7 @@
 #' launch_kaya_tool()
 #' }
 #'
-launch_kaya_tool <- function(rstudio = getOption("kaya_tool.rstudio"), ...) {
+launch_kaya_tool <- function(rstudio = getOption("kayatool.rstudio"), ...) {
   message("\nLaunching kayatool interface.")
   invisible(launch(rstudio, ...))
 }
