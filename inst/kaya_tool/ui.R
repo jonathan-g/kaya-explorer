@@ -73,7 +73,7 @@ shinyUI(fluidPage(
         }
       },
       htmlOutput('trend_title'),
-      tableOutput('trend_table'),
+      uiOutput('trend_table'),
       htmlOutput('target_emissions')
     ),
     mainPanel(

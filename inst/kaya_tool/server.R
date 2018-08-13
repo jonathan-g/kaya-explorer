@@ -8,7 +8,8 @@ library(shiny)
 library(tidyverse)
 library(ggvis)
 library(stringr)
-library(rtable)
+library(flextable)
+library(officer)
 library(broom)
 library(RColorBrewer)
 library(DT)
@@ -42,14 +43,31 @@ co2.to.c <- function(x) {x * mass.c / mass.co2}
 answer.bg <- '#FFFFA0'
 answer.fg <- '#A000A0'
 
-normal.body.props <- cellProperties(padding.left = 2, padding.right = 2)
-normal.head.props <- cellProperties(padding.top = 2,
-                                    padding.left = 2, padding.right = 2)
-answer.body.props <- cellProperties(padding.left = 2, padding.right = 2,
-                                    background.color = answer.bg)
-answer.head.props <- cellProperties(padding.top = 2,
-                                    padding.left = 2, padding.right = 2,
-                                    background.color = answer.bg)
+# normal.body.props <- cellProperties(padding.left = 2, padding.right = 2)
+# normal.head.props <- cellProperties(padding.top = 2,
+#                                     padding.left = 2, padding.right = 2)
+# answer.body.props <- cellProperties(padding.left = 2, padding.right = 2,
+#                                     background.color = answer.bg)
+# answer.head.props <- cellProperties(padding.top = 2,
+#                                     padding.left = 2, padding.right = 2,
+#                                     background.color = answer.bg)
+
+normal.body.props <- list(pr_t = fp_text(),
+                          pr_p = fp_par(padding.left = 2, padding.right = 2,
+                                        padding.top = 2),
+                          pr_c = fp_cell())
+normal.head.props <- list(pr_t = fp_text(),
+                          pr_p = fp_par(padding.left = 2, padding.right = 2,
+                                        padding.top = 2),
+                          pr_c = fp_cell())
+answer.body.props <- list(pr_t = fp_text(),
+                          pr_p = fp_par(padding.left = 2, padding.right = 2,
+                                        padding.top = 2),
+                          pr_c = fp_cell(background.color = answer.bg))
+answer.head.props <- list(pr_t = fp_text(),
+                          pr_p = fp_par(padding.left = 2, padding.right = 2,
+                                        padding.top = 2),
+                          pr_c = fp_cell(background.color = answer.bg))
 
 kaya <- load_kaya() %>% mutate(F = c.to.co2(F), f = c.to.co2(f), ef = c.to.co2(ef))
 
@@ -434,7 +452,7 @@ shinyServer(function(input, output, session) {
   })
 
 
-  output$trend_table <- renderFlexTable({
+  output$trend_table <- renderUI({
     fcast <- forecast()
     current_yr <- current_year()
     fcast <- fcast %>% mutate(growth.pct = str_c(prt(growth.rate * 100, 2), '%'),
@@ -442,13 +460,15 @@ shinyServer(function(input, output, session) {
                               projected = prt(projected, 3, format = 'fg')) %>%
       select(variable, growth.pct, current, projected) %>%
       mutate(variable = add_units(variable))
-    names(fcast) <- c('', 'Rate of Change', paste0('Current (', current_yr, ')'),
-                      paste0('Projected (', input$target_yr, ')'))
-    ft <- FlexTable(fcast)
-    ft[,, to='header'] <- parCenter()
-    ft[,1] <- parCenter()
-    ft[,2:ncol(fcast)] <- parRight()
-    ft
+    message("fcast: (", str_c(names(fcast), collapse = ", "), ")")
+    ft <- flextable(fcast) %>%
+      set_header_labels(variable = '', growth.pct = 'Rate of Change',
+                        current = paste0('Current (', current_yr, ')'),
+                        projected = paste0('Projected (', input$target_yr, ')')) %>%
+    align(align = "center", part = "header") %>%
+      align(align = "right", part = "body") %>%
+      # align(align = "center", part = "body", j = 1) %>%
+      htmltools_value()
   })
 
   output$step_1 <- renderText({
@@ -458,7 +478,7 @@ shinyServer(function(input, output, session) {
            ", and their historical rates of change.")
   })
 
-  output$step_1_table <- renderFlexTableIf({
+  output$step_1_table <- renderUI({
     target_yr <- input$target_yr
     current_yr <- current_year()
     fcast <- forecast() %>% filter(variable %in% c('P', 'g', 'e', 'f')) %>%
@@ -466,14 +486,20 @@ shinyServer(function(input, output, session) {
              current = prt(current, 3, format = 'fg'),
              growth.rate = paste0(prt(growth.rate * 100, 2), '%')) %>%
       select(variable, current, growth.rate)
-    names(fcast) <- c('', paste0("Current"," (",current_yr,")"), "Rate of Change")
-    ft <- FlexTable(fcast, header.cell.props = answer.head.props,
-                    body.cell.props = answer.body.props)
-    ft[,,to="header"] <- parCenter()
-    ft[,] <- parRight()
-    ft[,1] <- parCenter()
+    ft <- flextable(fcast) %>%
+      set_header_labels(variable = '',
+                        current = paste0("Current"," (",current_yr,")"),
+                        growth.rate = "Rate of Change") %>%
+      style(part = "header", pr_t = answer.head.props$pr_t,
+            pr_p = answer.head.props$pr_p,
+            pr_c = answer.head.props$pr_c) %>%
+      style(part = "body", pr_t = answer.body.props$pr_t,
+            pr_p = answer.body.props$pr_p,
+            pr_c = answer.body.props$pr_c) %>%
+      align(part = "body", align = "right") %>%
+      align(part = "body", align = "center", j = 1)
     if (calc_show_answers())
-      ft
+      ft %>% htmltools_value()
     else
       NULL
   })
