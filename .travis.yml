@@ -1,4 +1,7 @@
 language: r
-sudo: required
 cache: packages
+addons:
+  apt:
+    packages:
+      - libv8-3.14-dev
 after_failure: "cat /home/travis/build/gilligan-ees-3310/kayatool/kayatool.Rcheck/00install.out"
