@@ -52,22 +52,58 @@ answer.fg <- '#A000A0'
 #                                     padding.left = 2, padding.right = 2,
 #                                     background.color = answer.bg)
 
-normal.body.props <- list(pr_t = fp_text(),
+normal.body.props <- list(pr_t = fp_text(font.size = 12),
                           pr_p = fp_par(padding.left = 2, padding.right = 2,
                                         padding.top = 2),
                           pr_c = fp_cell())
-normal.head.props <- list(pr_t = fp_text(),
+normal.head.props <- list(pr_t = fp_text(font.size = 12, bold = TRUE),
                           pr_p = fp_par(padding.left = 2, padding.right = 2,
                                         padding.top = 2),
                           pr_c = fp_cell())
-answer.body.props <- list(pr_t = fp_text(),
+answer.body.props <- list(pr_t = fp_text(font.size = 12),
                           pr_p = fp_par(padding.left = 2, padding.right = 2,
                                         padding.top = 2),
                           pr_c = fp_cell(background.color = answer.bg))
-answer.head.props <- list(pr_t = fp_text(),
+answer.head.props <- list(pr_t = fp_text(font.size = 12, bold = TRUE),
                           pr_p = fp_par(padding.left = 2, padding.right = 2,
                                         padding.top = 2),
                           pr_c = fp_cell(background.color = answer.bg))
+
+theme_kaya <- function(x, answer = FALSE) {
+  if (answer) {
+    hprops <- answer.head.props
+    bprops <- answer.body.props
+  } else {
+    hprops <- normal.head.props
+    bprops <- normal.body.props
+  }
+
+  big_border <- fp_border(width = 2)
+  std_border <- fp_border(width = 1)
+  h_nrow <- flextable:::nrow_part(x, "header")
+  f_nrow <- flextable:::nrow_part(x, "footer")
+  b_nrow <- flextable:::nrow_part(x, "body")
+  x <- border_remove(x)
+  x <- style(x = x, pr_t = hprops$pr_t, pr_p = hprops$pr_p, pr_c = hprops$pr_c,
+             part = "header") %>%
+    style(pr_t = bprops$pr_t, pr_p = bprops$pr_p, pr_c = hprops$pr_c,
+          part = "body")
+  if (h_nrow > 0) {
+    x <- x %>%
+      hline_top(border = big_border, part = "header") %>%
+      hline(border = std_border, part = "header") %>%
+      hline_bottom(border = big_border, part = "header")
+  }
+  if (f_nrow > 0) {
+    x <- x %>% hline(border = std_border, part = "footer") %>%
+      hline_bottom(border = big_border, part = "footer")
+  }
+  if (b_nrow > 0) {
+    x <- x %>% hline(border = std_border, part = "body") %>%
+      hline_bottom(border = big_border, part = "body")
+  }
+  x
+}
 
 kaya <- load_kaya() %>% mutate(F = c.to.co2(F), f = c.to.co2(f), ef = c.to.co2(ef))
 
@@ -112,19 +148,6 @@ add_units <- function(variables) {
   suppressWarnings(str_c(variables, ' (', kaya_labels$unit[pmatch(variables, kaya_labels$variable)], ')'))
 }
 
-renderFlexTableIf <- function(expr, ..., env = parent.frame(), quoted = FALSE)
-{
-  func = NULL
-  installExprFunction(expr, "func", env, quoted)
-  markRenderFunction(tableOutput, function() {
-    data = func()
-    if (is.null(data))
-      return(NULL)
-    else
-      return(as.html(data))
-  })
-}
-
 shinyServer(function(input, output, session) {
   countries <- reactive({
   c_list <- kaya_countries
@@ -167,6 +190,17 @@ shinyServer(function(input, output, session) {
     } else {
       message("disabling energy mix")
       js$disableTab("Energy Mix")
+    }
+    if ("calc_show_answers" %in% names(input)) {
+      if (input$country == "World") {
+        message("enabling answers")
+        shinyjs::enable("calc_show_answers")
+        updateCheckboxInput(session, "calc_show_answers", value = FALSE)
+      } else {
+        message("disabling answers")
+        updateCheckboxInput(session, "calc_show_answers", value = FALSE)
+        shinyjs::disable("calc_show_answers")
+      }
     }
   })
 
@@ -269,7 +303,9 @@ shinyServer(function(input, output, session) {
         error("Cannot figure out year for current year = ", current_year(), " and fd range = (",
               paste0(range(fd$year), collapse = ', '), ")")
       }
-      fd <- fd %>% filter(year == y)
+      fd <- fd %>% filter(year == y) %>%
+        mutate(fuel = fct_recode(fuel, Renewables = "Hydro")) %>%
+        group_by(fuel) %>% summarize(quads = sum(quads), pct = sum(pct)) %>% ungroup()
     }
     message(print(fd))
     invisible(fd)
@@ -462,12 +498,14 @@ shinyServer(function(input, output, session) {
       mutate(variable = add_units(variable))
     message("fcast: (", str_c(names(fcast), collapse = ", "), ")")
     ft <- flextable(fcast) %>%
+      autofit(add_w = 0, add_h = 0) %>%
       set_header_labels(variable = '', growth.pct = 'Rate of Change',
                         current = paste0('Current (', current_yr, ')'),
                         projected = paste0('Projected (', input$target_yr, ')')) %>%
-    align(align = "center", part = "header") %>%
-      align(align = "right", part = "body") %>%
       # align(align = "center", part = "body", j = 1) %>%
+      theme_kaya() %>%
+      align(align = "center", part = "header") %>%
+      align(align = "right", part = "body") %>%
       htmltools_value()
   })
 
@@ -479,7 +517,8 @@ shinyServer(function(input, output, session) {
   })
 
   output$step_1_table <- renderUI({
-    target_yr <- input$target_yr
+    if (calc_show_answers()) {
+      target_yr <- input$target_yr
     current_yr <- current_year()
     fcast <- forecast() %>% filter(variable %in% c('P', 'g', 'e', 'f')) %>%
       mutate(variable = add_units(variable),
@@ -487,21 +526,17 @@ shinyServer(function(input, output, session) {
              growth.rate = paste0(prt(growth.rate * 100, 2), '%')) %>%
       select(variable, current, growth.rate)
     ft <- flextable(fcast) %>%
+      autofit() %>%
       set_header_labels(variable = '',
                         current = paste0("Current"," (",current_yr,")"),
                         growth.rate = "Rate of Change") %>%
-      style(part = "header", pr_t = answer.head.props$pr_t,
-            pr_p = answer.head.props$pr_p,
-            pr_c = answer.head.props$pr_c) %>%
-      style(part = "body", pr_t = answer.body.props$pr_t,
-            pr_p = answer.body.props$pr_p,
-            pr_c = answer.body.props$pr_c) %>%
+      theme_kaya(TRUE) %>%
       align(part = "body", align = "right") %>%
-      align(part = "body", align = "center", j = 1)
-    if (calc_show_answers())
-      ft %>% htmltools_value()
-    else
+      align(part = "body", align = "center", j = 1) %>%
+      htmltools_value()
+    } else {
       NULL
+    }
   })
 
   output$step_2 <- renderText({
@@ -509,25 +544,28 @@ shinyServer(function(input, output, session) {
            "and which do not?")
   })
 
-  output$step_2_table <- renderFlexTableIf({
-    t <- trends() %>%
-      mutate(goodness = map(r.squared, goodness_of_fit) %>%
-                              simplify()) %>%
-      select(Variable = variable, `Goodness of Fit` = goodness)
+  output$step_2_table <- renderUI({
+    if (calc_show_answers()) {
+      t <- trends() %>%
+        mutate(goodness = map(r.squared, goodness_of_fit) %>%
+                 simplify()) %>%
+        select(variable, goodness)
 
-    if (FALSE) {
-      message(print(t))
-    }
+      if (FALSE) {
+        message(print(t))
+      }
 
-    ft <- FlexTable(t, header.cell.props = answer.head.props,
-                    body.cell.props = answer.body.props)
-    ft[,,to="header"] <- parCenter()
-    ft[,] <- parRight()
-    ft[,1] <- parCenter()
-    if (calc_show_answers())
-      ft
-    else
+      ft <- flextable(t) %>%
+        autofit() %>%
+        set_header_labels(variable = 'variable',
+                          goodness = "Goodness of Fit") %>%
+        theme_kaya(TRUE) %>%
+        align(part = "body", align = "center") %>%
+        align(part = "body", align = "center", j = 1) %>%
+        htmltools_value()
+    } else {
       NULL
+    }
   })
 
   output$step_3 <- renderText({
@@ -541,9 +579,9 @@ shinyServer(function(input, output, session) {
   })
 
   output$step_3_formula <- renderUI({
+    if (calc_show_answers()) {
     current_yr = current_year()
     target_yr = input$target_yr
-    if (!calc_show_answers()) return()
     withMathJax(span(paste0("If variable \\(x\\) has value \\(x(",current_yr,")\\) in ",
                        current_yr, " and its rate of change is \\(r\\), then in ",
                        target_yr, " its value will be \\(x(",
@@ -551,23 +589,30 @@ shinyServer(function(input, output, session) {
                        target_yr, "-", current_yr,")) = x(", current_yr, ")  \\times \\exp(r \\times ",
                        (target_yr - current_yr), "))\\)"),
                      style=paste0("color:", answer.fg, ";font-weight:bold;")))
+    } else {
+      NULL
+    }
   })
 
-  output$step_3_table <- renderFlexTableIf({
-    if (! calc_show_answers()) return()
-    target_yr <- input$target_yr
-    current_yr <- current_year()
-    fcast <- forecast() %>% filter(variable %in% c('P', 'g', 'e', 'f')) %>%
-      mutate(variable = add_units(variable),
-             projected = prt(projected, 3, format = 'fg')) %>%
-      select(variable, projected)
-    names(fcast) <- c('', paste0("Projected (", target_yr, ")"))
-    ft <- FlexTable(fcast, header.cell.props = answer.head.props,
-                    body.cell.props = answer.body.props)
-    ft[,,to="header"] <- parCenter()
-    ft[,] <- parRight()
-    ft[,1] <- parCenter()
-    ft
+  output$step_3_table <- renderUI({
+    if (calc_show_answers()) {
+      target_yr <- input$target_yr
+      current_yr <- current_year()
+      fcast <- forecast() %>% filter(variable %in% c('P', 'g', 'e', 'f')) %>%
+        mutate(variable = add_units(variable),
+               projected = prt(projected, 3, format = 'fg')) %>%
+        select(variable, projected)
+      ft <- flextable(fcast) %>%
+        autofit() %>%
+        set_header_labels(variable = "",
+                          projected = paste0("Projected (", target_yr, ")")) %>%
+        theme_kaya(TRUE) %>%
+        align(part = "body", align = "right") %>%
+        align(part = "body", align = "center", j = 1) %>%
+        htmltools_value()
+    } else {
+      NULL
+    }
   })
 
 
@@ -578,21 +623,24 @@ shinyServer(function(input, output, session) {
            '&rdquo; table on the left-hand panel.')
   })
 
-  output$step_4_table <- renderFlexTableIf({
-    target_yr <- input$target_yr
-    current_yr <- current_year()
-    fcast <- forecast() %>% filter(variable %in% c('F')) %>%
-      mutate(variable = add_units(variable), current = prt(current, 3, format = 'fg'),
-             projected = prt(projected, 3, format = 'fg'))
-    fcast <- fcast %>% select(variable, current, projected)
-    names(fcast) <- c('',suppressWarnings(str_c(c("Current", "Projected"), " (", c(current_yr, target_yr), ")")))
-    ft <- FlexTable(fcast, header.cell.props = answer.head.props, body.cell.props = answer.body.props)
-    ft[,,to='header'] <- parCenter()
-    ft[,] <- parRight()
-    ft[,1] <- parCenter()
-    if (calc_show_answers())
-      ft
-    else {
+  output$step_4_table <- renderUI({
+    if(calc_show_answers()) {
+      target_yr <- input$target_yr
+      current_yr <- current_year()
+      fcast <- forecast() %>% filter(variable %in% c('F')) %>%
+        mutate(variable = add_units(variable), current = prt(current, 3, format = 'fg'),
+               projected = prt(projected, 3, format = 'fg'))
+      fcast <- fcast %>% select(variable, current, projected)
+      ft <- flextable(fcast) %>%
+        autofit() %>%
+        set_header_labels(variable = "",
+                          current = str_c("Current (", current_yr, ")"),
+                          projected = str_c("Projected (", target_yr, ")")) %>%
+        theme_kaya(TRUE) %>%
+        align(part = "body", align = "right") %>%
+        align(part = "body", align = "center", j = 1) %>%
+        htmltools_value()
+    } else {
       NULL
     }
   })
@@ -612,19 +660,25 @@ shinyServer(function(input, output, session) {
            " than ", ref_yr, ") .")
   })
 
-  output$step_5_table <- renderFlexTableIf({
-    if (!calc_show_answers()) return()
-    ref_yr <- input$ref_yr
-    target_yr <- input$target_yr
+  output$step_5_table <- renderUI({
+    if (calc_show_answers()) {
+      ref_yr <- input$ref_yr
+      target_yr <- input$target_yr
 
-    df <- data.frame(
-      ref = prt(ref_emissions(), 0),
-      target = prt(target_emissions(), 0))
-    names(df) <- str_c(c("Emissions in ", "Target emissions in "), c(ref_yr, target_yr))
-    ft <- FlexTable(df, header.cell.props = answer.head.props, body.cell.props = answer.body.props)
-    ft[,] <- parRight()
-    ft[,,to='header'] <- parCenter()
-    ft
+      df <- data.frame(
+        ref = prt(ref_emissions(), 0),
+        target = prt(target_emissions(), 0))
+      ft <- flextable(df) %>%
+        autofit() %>%
+        set_header_labels(ref = str_c("Emissions in ", ref_yr),
+                          target = str_c("Target emissions in ", target_yr)) %>%
+        theme_kaya(TRUE) %>%
+        align(part = "body", align = "right") %>%
+        align(part = "body", align = "center", j = 1) %>%
+        htmltools_value()
+    } else {
+      NULL
+    }
   })
 
   output$step_6 <- renderText({
@@ -761,43 +815,6 @@ shinyServer(function(input, output, session) {
     title
   })
 
-  output$top_down_growth_table <- renderFlexTableIf({
-    td <- top_down_trends()
-    if(is.null(td)) {
-      ft <- NULL
-    } else {
-      fcast <- forecast_top_down()
-      current_yr <- current_year()
-      fcast <- fcast %>% mutate(growth.pct = str_c(prt(growth.rate * 100, 2), '%'),
-                                current = prt(current, 3, format = 'fg'),
-                                projected = prt(projected, 3, format = 'fg')) %>%
-        select(variable, growth.pct, current, projected) %>%
-        mutate(variable = add_units(variable))
-      names(fcast) <- c('', 'Rate of Change', paste0('Current (', current_yr, ')'),
-                        paste0('Projected (', input$target_yr, ')'))
-      ft <- FlexTable(fcast)
-      ft[,, to='header'] <- parCenter()
-      ft[,1] <- parCenter()
-      ft[,2:ncol(fcast)] <- parRight()
-    }
-    if (FALSE) {
-      message("td: ", str_c(names(td), " = ", td, collapse = ", "))
-      td <- td %>% rename(P = r.P, g = r.g, e = r.e) %>%
-        mutate(P = 100 * P, g = 100 * g, e = 100 * e,
-               G = P + g, E = G + e) %>%
-        select(-country) %>%
-        mutate_all(funs(prt(., 2) %>% str_c('%'))) %>%
-        gather(key = Parameter, value = `Growth rate`) %>%
-        mutate(Parameter = ordered(Parameter, levels = c('P', 'g', 'e', 'G', 'E')))
-
-      ft <- FlexTable(td, header.cell.props = normal.head.props, body.cell.props = normal.body.props)
-      ft[,1] <- parCenter()
-      ft[,2] <- parRight()
-      ft[,,to='header'] <- parCenter()
-    }
-    ft
-  })
-
   output$fuel_dist <- renderText({
     if(is.null(fuel_dist())) {
        mix_title <- paste0("Energy mix for ", input$country, " is not available.")
@@ -807,21 +824,23 @@ shinyServer(function(input, output, session) {
     mix_title
   })
 
-  output$fuel_dist_table <- renderFlexTableIf({
+  output$fuel_dist_table <- renderUI({
     df <- fuel_dist()
     if (is.null(df)) {
       NULL
     } else {
       df <- df %>% mutate(quads = round(quads, 2), pct = round(pct, 1)) %>%
-        dplyr::select(Fuel = fuel, Quads = quads, '%' = pct) %>%
-        arrange(Fuel)
-      df_total = summarize(df, Fuel = 'Total', Quads = sum(Quads), `%` = sum(`%`))
+        dplyr::select(fuel, quads, pct) %>%
+        arrange(fuel)
+      df_total = summarize(df, fuel = 'Total', quads = sum(quads), pct = sum(pct))
 
-      df <- df %>% bind_rows(df_total)
-      ft <- FlexTable(df, header.cell.props = normal.head.props, body.cell.props = normal.body.props)
-      ft[,] <- parRight()
-      ft[,,to='header'] <- parCenter()
-      ft
+      ft <- flextable(df) %>%
+        autofit() %>%
+        set_header_labels(fuel = "Fuel", quads = "Quads", pct = "%") %>%
+        theme_kaya() %>%
+        align(part = "body", align = "right") %>%
+        align(part = "body", align = "center", j = 1) %>%
+      htmltools_value()
     }
   })
 
@@ -844,7 +863,7 @@ shinyServer(function(input, output, session) {
       coord_polar(theta = "y") +
       xlim(c(0,4)) +
       scale_fill_manual(values = c(Coal = '#e31a1c', 'Natural Gas' = '#fdbf6f', 'Oil' = '#ff7f00',
-                                   Nuclear = '#b2df8a', Renewables = '#33a02c', Total = '#a6cee3'),
+                                   Nuclear = '#33a02c', Renewables = '#b2df8a', Total = '#a6cee3'),
                         breaks = names(labels), labels = labels, name = "Fuel") +
       theme_bw(base_size = 20) +
       theme(panel.grid=element_blank(),
