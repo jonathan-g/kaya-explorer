@@ -4,13 +4,13 @@
 \alias{launch_kaya_tool}
 \title{Launch the kayatool app}
 \usage{
-launch_kaya_tool(rstudio = getOption("kaya_tool.rstudio"), ...)
+launch_kaya_tool(rstudio = getOption("kayatool.rstudio"), ...)
 }
 \arguments{
 \item{rstudio}{Only relevant for RStudio users. The default (\code{FALSE}) is
 to launch the app in the user's default web browser rather than RStudio's
 pop-up Viewer. Users can change the default to \code{TRUE} by setting the
-global option \code{options(shinystan.rstudio = TRUE)}.}
+global option \code{options(kayatool.rstudio = TRUE)}.}
 
 \item{...}{Optional arguments passed to \code{\link[shiny]{runApp}}.}
 }

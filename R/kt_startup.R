@@ -6,10 +6,10 @@
 
 .onLoad <- function(libname, pkgname) {
   op <- options()
-  op.kaya_tool <- list(
-    kaya_tool.rstudio = FALSE
+  op.kayatool <- list(
+    kayatool.rstudio = FALSE
   )
-  set_ops <- !(names(op.kaya_tool) %in% names(op))
-  if (any(set_ops)) options(op.kaya_tool[set_ops])
+  set_ops <- !(names(op.kayatool) %in% names(op))
+  if (any(set_ops)) options(op.kayatool[set_ops])
   invisible()
 }

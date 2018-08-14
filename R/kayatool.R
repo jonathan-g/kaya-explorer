@@ -9,13 +9,18 @@
 # You should have received a copy of the MIT License along with this program; if
 # not, see <https://opensource.org/licenses/MIT>.
 
-#' @docType package
-#' @name kayatool-package
+#' @title kayatool package
+#'
 #'
 #' @description
 #'
-#' kayatool is a Shiny application that allows students to explore the Kaya
-#' identity of many nations around the world.
+#' A Shiny-based explorer for Kaya identity. Loads data from the kayadata package and
+#' provides an interactive shiny app for exploring the data: choose a country or region and
+#' examine trends in the Kaya variables (population, gross domestic product, primary energy
+#' consumption, and carbon dioxide emissions), compare historical trends to the implied trends
+#' necessary to hit decarbonization policy targets (e.g., 70% reduction of emissions by 2050).
+#' Also allows the user to explore the fuel mix that different countries and regions use to
+#' supply their energy needs.
 #'
 #' @section License:
 #'
@@ -27,6 +32,8 @@
 #'  \item kayatool issue tracker (\url{https://github.com/jonathan-g/kayatool/issues})
 #' }
 #'
+#' @docType package
+#' @name kayatool-package
 #'
 #' @import shiny
 #' @import tidyverse
