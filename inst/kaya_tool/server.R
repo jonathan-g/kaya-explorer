@@ -18,7 +18,7 @@ library(DT)
 source('load_kaya.R')
 # source('energy_by_fuel.R')
 
-debugging = TRUE
+debugging = FALSE
 
 goodness_of_fit <- function(r.squared) {
   gof <- NA
@@ -955,7 +955,8 @@ shinyServer(function(input, output, session) {
 
   kaya_subset_plot <- reactive({
     if (debugging) message("kaya_subset_plot")
-    ks <- kaya_subset()
+    tv <- sym(input$trend_variable)
+    ks <- kaya_subset() %>% filter(! is.na(!!tv))
     tsy <- input$trend_start_year
     before <- ks %>% filter(year <= tsy) %>% mutate(in.trend = FALSE)
     after <- ks %>% filter(year >= tsy) %>% mutate(in.trend = TRUE)
@@ -1139,7 +1140,7 @@ shinyServer(function(input, output, session) {
     if (debugging) message("Setting up implied decarbonization plot")
     idc <- implied_decarb()
     if (debugging) message("idc is a ", str_c(class(idc), collapse = ", "))
-    plot <- idc %>%
+    plot <- idc %>% filter(! is.na(ef), year >= 1980) %>%
       ggvis(x = ~year, y = ~ef) %>%
       group_by(cat) %>%
       layer_lines(strokeWidth := 2, stroke = ~cat) %>%
