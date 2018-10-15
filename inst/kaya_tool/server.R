@@ -6,7 +6,7 @@
 
 library(shiny)
 library(tidyverse)
-library(ggvis)
+library(plotly)
 library(stringr)
 library(flextable)
 library(officer)
@@ -106,12 +106,16 @@ theme_kaya <- function(x, answer = FALSE) {
 }
 
 kaya <- load_kaya() %>% mutate(F = c.to.co2(F), f = c.to.co2(f), ef = c.to.co2(ef))
+message("Kaya data loaded")
 
 kaya$id <- seq_len(nrow(kaya))
 
 top_down <- load_top_down()
+message("Top-down data loaded")
+
 
 energy_by_fuel <- load_energy_by_fuel()
+message("Fuel mixes loaded")
 
 kaya_countries <- as.character(unique(kaya$country))
 td_countries <- as.character(unique(top_down$country)) %>% keep(~.x %in% kaya_countries)
@@ -159,12 +163,13 @@ shinyServer(function(input, output, session) {
   observeEvent(input$country, {
     ctry <- input$country
     if (is.null(ctry)) {
-      message("NULL country")
+      message("Setting NULL country")
       ctry <- 'World'
     } else if (ctry == '') {
-      message('Empty country')
+      message('Setting empty country')
       ctry <- 'World'
     }
+    message("Setting country to ", ctry)
     updateSelectInput(session, 'country', choices = countries(), selected = ctry)
   })
 
@@ -172,6 +177,7 @@ shinyServer(function(input, output, session) {
     ctry <- input$country
     if (! ctry %in% kaya_countries)
       ctry <- 'World'
+    message("Calculating subset for ", ctry)
     ks <- kaya  %>% filter(country == ctry) %>% arrange(year)
     ks
   })
@@ -212,6 +218,7 @@ shinyServer(function(input, output, session) {
                  })
 
   observeEvent( kaya_subset(), {
+    message("Updating kaya subset")
     ks <- kaya_subset()
     ks.min.yr <- min(ks$year)
     ks.max.yr <- max(ks$year)
@@ -507,6 +514,8 @@ shinyServer(function(input, output, session) {
       align(align = "center", part = "header") %>%
       align(align = "right", part = "body") %>%
       htmltools_value()
+    message("finished forecast")
+    ft
   })
 
   output$step_1 <- renderText({
@@ -943,7 +952,7 @@ shinyServer(function(input, output, session) {
       add_axis("y", title = as.character(yvar_name)) %>%
       scale_nominal("stroke", range = c('#FF8080', '#A00000')) %>%
       scale_nominal("fill", range = c('#FF8080', '#A00000')) %>%
-      hide_legend(c('stroke', 'fill')) %>%
+      hide_legend() %>%
       set_options(width="auto", height="auto", resizable = FALSE)
     plot
   })
@@ -977,25 +986,33 @@ shinyServer(function(input, output, session) {
     tsy <- input$trend_start_year
     plot <- kaya_subset_plot %>%
       #      mutate(in.trend = year >= tsy, f.in.trend = factor(in.trend)) %>%
-      ggvis(x = ~year, y = yvar) %>%
-      group_by(f.in.trend) %>%
-      layer_lines(strokeWidth := 2, stroke = ~f.in.trend) %>%
-      ungroup() %>%
-      layer_points(size := 15, size.hover := 50,
-                   fillOpacity := 1, fillOpacity.hover := 1,
-                   fill = ~f.in.trend, stroke = ~f.in.trend,
-                   key := ~id) %>%
-      filter(year >= tsy) %>%
-      layer_model_predictions(model = "lm") %>%
-      add_tooltip(trend_tooltip, "hover") %>%
-      add_axis("x", title = xvar_name, format="4d",
-               values = x_tics) %>%
-      add_axis("y", title = as.character(yvar_name)) %>%
-      scale_nominal("stroke", range = c('#FF8080', '#A00000')) %>%
-      scale_nominal("fill", range = c('#FF8080', '#A00000')) %>%
-      hide_legend(c('stroke', 'fill')) %>%
-      set_options(width="auto", height="auto", resizable = FALSE)
-    plot
+      ggplot(aes(x = year, y = (!!yvar), color = f.in.trend)) +
+      geom_point(size = 15, na.rm = TRUE) + geom_line(size = 1, na.rm = TRUE) +
+      geom_smooth(method = "lm", data = filter(kaya_subset_plot, year >= tsy),
+                  na.rm = TRUE, fill = NA) +
+      scale_color_manual(values = c("#FF8080", "A00000"), guide = "none") +
+      theme_bw()
+
+      geom_plotly(plot, tooltip = c("x", "y"))
+
+    # ggvis(x = ~year, y = yvar) %>%
+    # group_by(f.in.trend) %>%
+    # layer_lines(strokeWidth := 2, stroke = ~f.in.trend) %>%
+    # ungroup() %>%
+    # layer_points(size := 15, size.hover := 50,
+    #              fillOpacity := 1, fillOpacity.hover := 1,
+    #              fill = ~f.in.trend, stroke = ~f.in.trend,
+    #              key := ~id) %>%
+    # filter(year >= tsy) %>%
+    # layer_model_predictions(model = "lm") %>%
+    # add_tooltip(trend_tooltip, "hover") %>%
+    # add_axis("x", title = xvar_name, format="4d",
+    #          values = x_tics) %>%
+    # add_axis("y", title = as.character(yvar_name)) %>%
+    # scale_nominal("stroke", range = c('#FF8080', '#A00000')) %>%
+    # scale_nominal("fill", range = c('#FF8080', '#A00000')) %>%
+    # hide_legend(c('stroke', 'fill')) %>%
+    # set_options(width="auto", height="auto", resizable = FALSE)
   })
 
   tpl %>% bind_shiny("trend_plot_ln", session = session)

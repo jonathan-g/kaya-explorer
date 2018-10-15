@@ -2,7 +2,7 @@ image: rocker/verse
 
 test:
   script:
-    - R -e "install.packages(c('shiny', 'ggvis', 'DT', 'shinyjs', 'flextable', 'janitor'))"
+    - R -e "install.packages(c('shiny', 'DT', 'shinyjs', 'flextable', 'janitor', 'officer', 'V8'))"
     - R -e "devtools::install_github('jonathan-g/kayadata')"
     - R CMD build . --no-build-vignettes --no-manual
     - PKG_FILE_NAME=$(ls -1t *.tar.gz | head -n 1)

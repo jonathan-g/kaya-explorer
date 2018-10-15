@@ -1,8 +1,8 @@
 Package: kayatool
 Type: Package
 Title: Interactive Explorer for Kaya Identity
-Version: 0.3.2.9990
-Date: 2018-08-13
+Version: 0.3.3
+Date: 2018-10-14
 Authors@R: c(person("Jonathan", "Gilligan", role = c("aut", "cre"),
                     email = "jonathan.gilligan@vanderbilt.edu"))
 Description: A Shiny-based explorer for Kaya identity. Loads data from the kayadata package and
@@ -22,18 +22,16 @@ Imports:
   broom,
   DT,
   ggvis,
-  grid,
   janitor,
   lazyeval,
   magrittr,
   RColorBrewer,
-  readxl,
   flextable,
   shinyjs,
   stringr,
   tidyverse,
   V8,
-  kayadata (> 0.3.2)
+  kayadata (>= 0.3.3)
 Remotes:
   jonathan-g/kayadata
 Encoding: UTF-8
