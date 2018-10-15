@@ -1,3 +1,7 @@
+# kayatool 0.3.3
+
+Updated to use kayadata library.
+
 # kayatool 0.2.1
 
 Moved github repository to https://github.com/gilligan-ees-3310/kayatool

@@ -22,7 +22,7 @@ Kaya identity for a number of countries and regions of the world.
 To install this package you can use the `devtools` package in RStudio to run
 ```
 library(devtools)
-install_github("gilligan-ees-3310/kayatool")
+install_github("jonathan-g/kayatool")
 ```
 and then load the package with 
 ```
@@ -31,7 +31,7 @@ library(kayatool)
 or use the `pacman` package to load `kayatool`, installing it first if necessary: 
 ```
 library(pacman)
-p_load_current_gh("gilligan-ees-3310/kayatool")
+p_load_current_gh("jonathan-g/kayatool")
 ```
 Once you have loaded the package, you can launch it from RStudio with
 ```
