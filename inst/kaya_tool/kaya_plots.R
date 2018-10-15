@@ -4,6 +4,9 @@ library(lazyeval)
 
 
 kaya_plot <- function(kaya, countries, v, y_lab = NULL) {
+  message("Kaya Plot: kaya is a ", str_c(class(kaya), collapse = ", "),
+          " and countries = ", str_c(as.list(countries), collapse = ", "),
+          " and variable = ", v)
   labels <- c(P =  'Population (billions)',
               G =  'Gross Domestic Product ($ trillion)',
               E =  'Energy consumption (quads)',
@@ -30,6 +33,7 @@ kaya_plot <- function(kaya, countries, v, y_lab = NULL) {
     legend = guides(color = FALSE, shape = FALSE)
   }
 
+  if (debugging) message("In kaya_plot, data is a ", str_c(class(data), collapse = ", "))
   p <- ggplot(data, aes_string(x = "year", y = v, shape = "country", color = "country"))
   p + geom_point(size = 3) + geom_line(size = 1) +
     color_scale +

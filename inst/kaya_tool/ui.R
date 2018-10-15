@@ -11,7 +11,7 @@ library(shinyjs)
 library(DT)
 library(ggvis)
 
-enable_answers <- TRUE
+enable_answers <- FALSE
 enable_topdown <- FALSE
 
 

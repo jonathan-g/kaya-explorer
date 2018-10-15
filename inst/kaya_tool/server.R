@@ -6,7 +6,8 @@
 
 library(shiny)
 library(tidyverse)
-library(plotly)
+# library(plotly)
+library(ggvis)
 library(stringr)
 library(flextable)
 library(officer)
@@ -16,6 +17,8 @@ library(DT)
 
 source('load_kaya.R')
 # source('energy_by_fuel.R')
+
+debugging = TRUE
 
 goodness_of_fit <- function(r.squared) {
   gof <- NA
@@ -154,56 +157,60 @@ add_units <- function(variables) {
 
 shinyServer(function(input, output, session) {
   countries <- reactive({
-  c_list <- kaya_countries
-  if (input$tabs == 'Top Down') { c_list <- td_countries} else
-    if (input$tabs == 'Energy Mix') { c_list <- ebf_countries }
-  c_list
+    if (debugging) message("countries")
+    c_list <- kaya_countries
+    if (input$tabs == 'Top Down') { c_list <- td_countries} else
+      if (input$tabs == 'Energy Mix') { c_list <- ebf_countries }
+    c_list
   })
 
   observeEvent(input$country, {
+    if (debugging) message("Changing country #1")
     ctry <- input$country
     if (is.null(ctry)) {
-      message("Setting NULL country")
+      if (debugging) message("Setting NULL country")
       ctry <- 'World'
     } else if (ctry == '') {
-      message('Setting empty country')
+      if (debugging) message('Setting empty country')
       ctry <- 'World'
     }
-    message("Setting country to ", ctry)
+    if (debugging) message("Setting country to ", ctry)
     updateSelectInput(session, 'country', choices = countries(), selected = ctry)
   })
 
   kaya_subset <- eventReactive(input$country, {
+    if (debugging) message("kaya_subset")
     ctry <- input$country
     if (! ctry %in% kaya_countries)
       ctry <- 'World'
-    message("Calculating subset for ", ctry)
+    if (debugging) message("Calculating subset for ", ctry)
     ks <- kaya  %>% filter(country == ctry) %>% arrange(year)
     ks
   })
 
   observeEvent(input$country, {
+    if (debugging) message("Changing country #2")
     if (input$country %in% td_countries) {
-      message("enabling top down")
+      if (debugging) message("enabling top down")
       js$enableTab("Top Down")
     } else {
-      message("disabling top down")
+      if (debugging) message("disabling top down")
       js$disableTab("Top Down")
     }
     if (input$country %in% ebf_countries) {
-      message("enabling energy mix")
+      if (debugging) message("enabling energy mix")
       js$enableTab("Energy Mix")
     } else {
-      message("disabling energy mix")
+      if (debugging) message("disabling energy mix")
       js$disableTab("Energy Mix")
     }
     if ("calc_show_answers" %in% names(input)) {
       if (input$country == "World") {
-        message("enabling answers")
+        if (debugging) message("enabling answers")
         shinyjs::enable("calc_show_answers")
         updateCheckboxInput(session, "calc_show_answers", value = FALSE)
       } else {
-        message("disabling answers")
+        if (debugging) message("disabling answers")
         updateCheckboxInput(session, "calc_show_answers", value = FALSE)
         shinyjs::disable("calc_show_answers")
       }
@@ -218,7 +225,7 @@ shinyServer(function(input, output, session) {
                  })
 
   observeEvent( kaya_subset(), {
-    message("Updating kaya subset")
+    if (debugging) message("Updating kaya subset")
     ks <- kaya_subset()
     ks.min.yr <- min(ks$year)
     ks.max.yr <- max(ks$year)
@@ -236,27 +243,40 @@ shinyServer(function(input, output, session) {
   })
 
   current_year <- reactive({
+    if (debugging) message("current_year")
     max(kaya_subset()$year, na.rm = T)
   })
 
   history_start <- reactive({
+    if (debugging) message("history_start")
     min(kaya_subset()$year, na.rm = T)
   })
 
   history_stop <- reactive({
+    if (debugging) message("history_stop")
     max(kaya_subset()$year)
   })
 
   ref_emissions <- reactive({
+    if (debugging) message("ref_emissions")
     ref_yr <- input$ref_yr
-    ref_emissions <- kaya_subset() %>% filter(year == ref_yr) %>% select(F) %>% unlist()
+    re <- kaya_subset()
+    if (debugging) message("ref_emissions is a ", str_c(class(re), collapse = ", "))
+    re <- re %>%
+      filter(year == ref_yr) %>% select(F) %>% unlist()
+    if (debugging) message("Filtered ref_emissions")
+    re
   })
 
   target_emissions <- reactive({
-    ref_emissions() * (1. - input$target_reduc / 100.)
+    if (debugging) message("target_emissions")
+    te <- ref_emissions() * (1. - input$target_reduc / 100.)
+    if (debugging) message("finished target_emissions")
+    te
   })
 
   calc_show_answers <- reactive({
+    if (debugging) message("calc_show_answers")
     if ('calc_show_answers' %in% names(input))
       return(input$calc_show_answers)
     else
@@ -264,6 +284,7 @@ shinyServer(function(input, output, session) {
   })
 
   trends <- reactive({
+    if (debugging) message("trends")
     trend.start <- input$trend_start_year
     ks <- kaya_subset() %>% filter(year >= trend.start)
     vars <- c('P','g', 'e', 'f', 'ef', 'G', 'E', 'F')
@@ -284,6 +305,7 @@ shinyServer(function(input, output, session) {
   })
 
   top_down_trends <- reactive({
+    if (debugging) message("top_down_trends")
     td <- top_down
     td <- td %>% dplyr::filter(country == input$country) %>%
       mutate(g = G - P, e = E - G, f = F - E) %>%
@@ -296,6 +318,7 @@ shinyServer(function(input, output, session) {
   })
 
   fuel_dist <- reactive({
+    if (debugging) message("fuel_dist")
     fd <- energy_by_fuel %>% filter(country == input$country)
     if (nrow(fd) == 0) {
       fd <- NULL
@@ -314,11 +337,12 @@ shinyServer(function(input, output, session) {
         mutate(fuel = fct_recode(fuel, Renewables = "Hydro")) %>%
         group_by(fuel) %>% summarize(quads = sum(quads), pct = sum(pct)) %>% ungroup()
     }
-    message(print(fd))
+    if (debugging) message(print(fd))
     invisible(fd)
   })
 
   forecast <- reactive({
+    if (debugging) message("forecast")
     t <- trends() %>% mutate(variable = ordered(variable, levels = variable))
     current_yr <- current_year()
     ks <- kaya_subset() %>% filter(year == current_yr) %>%
@@ -327,10 +351,12 @@ shinyServer(function(input, output, session) {
     t <- merge(t, ks)
     t <- mutate(t, projected = current * exp((input$target_yr - current_yr) * growth.rate)) %>%
       arrange(variable)
+    if (debugging) message("finished forecast")
     t
   })
 
   forecast_top_down <- reactive({
+    if (debugging) message("forecast_top_down")
     t <- top_down_trends() %>% mutate(variable = ordered(variable, levels = variable))
     current_yr <- current_year()
     ks <- kaya_subset() %>% filter(year == current_yr) %>%
@@ -343,6 +369,7 @@ shinyServer(function(input, output, session) {
   })
 
   implied_decarb_rate <- reactive({
+    if (debugging) message("implied_decarb_rate")
     ks <- kaya_subset() %>% mutate(cat = 'Historical')
     fcast <- forecast()
     target_em <- target_emissions()
@@ -354,8 +381,8 @@ shinyServer(function(input, output, session) {
 
     rate = log(target_em / current_em) / delta_yr - rate_G
 
-    if (FALSE) {
-      message("target_em = ", prt(target_em,0), ", rate_G = ",
+    if (TRUE) {
+      if (debugging) message("target_em = ", prt(target_em,0), ", rate_G = ",
               prt(rate_G * 100, 2), "%, target ef rate  = ",
               prt(rate * 100,2), "%")
     }
@@ -363,6 +390,7 @@ shinyServer(function(input, output, session) {
   })
 
   implied_decarb <- reactive({
+    if (debugging) message("implied_decarb")
     ks <- kaya_subset() %>% select(year, ef) %>% mutate(cat = 'Historical')
     fcast <- forecast()
     target_yr <- input$target_yr
@@ -373,7 +401,7 @@ shinyServer(function(input, output, session) {
     rate <- implied_decarb_rate()
 
     if (FALSE) {
-      message("implied decarb rate = ", prt(100 * rate, 2), "%")
+      if (debugging) message("implied decarb rate = ", prt(100 * rate, 2), "%")
     }
 
     mdl <- lm(log(ef) ~ year, data = filter(ks, year >= input$trend_start_year))
@@ -390,6 +418,7 @@ shinyServer(function(input, output, session) {
   })
 
   output$trend_display <- renderText({
+    if (debugging) message("output$trend_display")
     v <- input$trend_variable
     k.label <- kaya_labels %>% filter(variable == v)
     t <- filter(trends(), variable == v)
@@ -401,6 +430,7 @@ shinyServer(function(input, output, session) {
   })
 
   output$historical_table <- DT::renderDataTable({
+    if (debugging) message("output$historical_table")
     ks <- kaya_subset() %>% select(year, P, g, e, f, ef, G, E, F)
     ks <- ks %>% mutate(P = prt(P, 2),
                         g = prt(g,1),
@@ -444,18 +474,20 @@ shinyServer(function(input, output, session) {
       df_total = summarize(df, Fuel = 'Total', Quads = sum(Quads), Percent = sum(Percent))
 
       df <- df %>% bind_rows(df_total)
-      message("df has ", nrow(df), " rows")
-      message("file = ", file)
+      if (debugging) message("df has ", nrow(df), " rows")
+      if (debugging) message("file = ", file)
       write_csv(df, path = file)
     })
 
   output$policy_goal <- renderText({
+    if (debugging) message("output$policy_goal")
     as.character(span(strong('Policy goal: '), paste0(input$target_yr, ' emissions ',
                       abs(input$target_reduc), '% ',
                       ifelse(input$target_reduc >= 0, 'below', 'above'), ' ', input$ref_yr)))
   })
 
   trend_title <- reactive({
+    if (debugging) message("trend_title")
     if ('analysis' %in% names(input)) {
       title <- c(top.down = "Top Down", bottom.up = "Bottom up")[input$analysis]
     } else {
@@ -465,22 +497,27 @@ shinyServer(function(input, output, session) {
   })
 
   output$trend_title <- renderText({
+    if (debugging) message("output$trend_title")
     as.character(h4(strong(trend_title())))
   })
 
   output$tab_title_trend <- renderText({
+    if (debugging) message("output$tab_title_trend")
     paste("Historical Trends for", input$country)
   })
 
   output$tab_title_calc <- renderText({
+    if (debugging) message("output$tab_title_calc")
     paste("Calcuating Implied Decarbonization for", input$country)
   })
 
   output$tab_title_decarb <- renderText({
+    if (debugging) message("output$tab_title_decarb")
     paste("Implied Decarbonization for", input$country)
   })
 
   output$tab_title_fuel_dist <- renderText({
+    if (debugging) message("output$tab_title_fuel_dist")
     x <- paste0("Energy Mix for ", input$country)
     if (! is.null(fuel_dist())) {
       x <- paste0(x, " in ", fuel_dist()$year[1])
@@ -491,11 +528,13 @@ shinyServer(function(input, output, session) {
   })
 
   output$tab_title_historical <- renderText({
+    if (debugging) message("output$tab_title_historical")
     paste("Historical Data for", input$country)
   })
 
 
   output$trend_table <- renderUI({
+    if (debugging) message("output$trend_table")
     fcast <- forecast()
     current_yr <- current_year()
     fcast <- fcast %>% mutate(growth.pct = str_c(prt(growth.rate * 100, 2), '%'),
@@ -503,7 +542,7 @@ shinyServer(function(input, output, session) {
                               projected = prt(projected, 3, format = 'fg')) %>%
       select(variable, growth.pct, current, projected) %>%
       mutate(variable = add_units(variable))
-    message("fcast: (", str_c(names(fcast), collapse = ", "), ")")
+    if (debugging) message("fcast: (", str_c(names(fcast), collapse = ", "), ")")
     ft <- flextable(fcast) %>%
       autofit(add_w = 0, add_h = 0) %>%
       set_header_labels(variable = '', growth.pct = 'Rate of Change',
@@ -514,11 +553,12 @@ shinyServer(function(input, output, session) {
       align(align = "center", part = "header") %>%
       align(align = "right", part = "body") %>%
       htmltools_value()
-    message("finished forecast")
+    if (debugging) message("finished output$trend_table")
     ft
   })
 
   output$step_1 <- renderText({
+    if (debugging) message("output$step_1")
     paste0(strong("Step 1: "), "Write down current (",
            current_year(), ") values for ",
            em('P'), ", ", em('g'), ", ", em('e'), ", and ", em('f'),
@@ -526,6 +566,7 @@ shinyServer(function(input, output, session) {
   })
 
   output$step_1_table <- renderUI({
+    if (debugging) message("output$step_1_table")
     if (calc_show_answers()) {
       target_yr <- input$target_yr
     current_yr <- current_year()
@@ -549,11 +590,13 @@ shinyServer(function(input, output, session) {
   })
 
   output$step_2 <- renderText({
+    if (debugging) message("output$step_2")
     paste0(strong("Step 2: "), "Which variables seem to follow a relatively constant rate of change, ",
            "and which do not?")
   })
 
   output$step_2_table <- renderUI({
+    if (debugging) message("output$step_2_table")
     if (calc_show_answers()) {
       t <- trends() %>%
         mutate(goodness = map(r.squared, goodness_of_fit) %>%
@@ -561,7 +604,7 @@ shinyServer(function(input, output, session) {
         select(variable, goodness)
 
       if (FALSE) {
-        message(print(t))
+        if (debugging) message(print(t))
       }
 
       ft <- flextable(t) %>%
@@ -578,6 +621,7 @@ shinyServer(function(input, output, session) {
   })
 
   output$step_3 <- renderText({
+    if (debugging) message("output$step_3")
     paste0(strong("Step 3: "), "Calculate the projected values for ",
            em('P'), ", ", em('g'), ", ", em('e'), ", and ", em('f'),
            ", in ", input$target_yr, '.',
@@ -588,6 +632,7 @@ shinyServer(function(input, output, session) {
   })
 
   output$step_3_formula <- renderUI({
+    if (debugging) message("output$step_3_formula")
     if (calc_show_answers()) {
     current_yr = current_year()
     target_yr = input$target_yr
@@ -604,6 +649,7 @@ shinyServer(function(input, output, session) {
   })
 
   output$step_3_table <- renderUI({
+    if (debugging) message("output$step_3_table")
     if (calc_show_answers()) {
       target_yr <- input$target_yr
       current_yr <- current_year()
@@ -626,6 +672,7 @@ shinyServer(function(input, output, session) {
 
 
   output$step_4 <- renderText({
+    if (debugging) message("output$step_4")
     paste0(strong("Step 4: "), "Multiply the variables together to get ", em("F"), " for each year.",
            ' Show your work, and check your answers against the &ldquo;',
            trend_title(),
@@ -633,6 +680,7 @@ shinyServer(function(input, output, session) {
   })
 
   output$step_4_table <- renderUI({
+    if (debugging) message("output$step_4_table")
     if(calc_show_answers()) {
       target_yr <- input$target_yr
       current_yr <- current_year()
@@ -655,6 +703,7 @@ shinyServer(function(input, output, session) {
   })
 
   output$step_5 <- renderText({
+    if (debugging) message("output$step_5")
     ref_yr <- input$ref_yr
     target_yr <- input$target_yr
     target_reduc <- input$target_reduc
@@ -670,6 +719,7 @@ shinyServer(function(input, output, session) {
   })
 
   output$step_5_table <- renderUI({
+    if (debugging) message("output$step_5_table")
     if (calc_show_answers()) {
       ref_yr <- input$ref_yr
       target_yr <- input$target_yr
@@ -691,6 +741,7 @@ shinyServer(function(input, output, session) {
   })
 
   output$step_6 <- renderText({
+    if (debugging) message("output$step_6")
     show_answers <- calc_show_answers()
     ref_yr <- input$ref_yr
     target_yr <- input$target_yr
@@ -772,6 +823,7 @@ shinyServer(function(input, output, session) {
   })
 
   output$step_7 <- renderText({
+    if (debugging) message("output$step_7")
     ref_yr <- input$ref_yr
     target_yr <- input$target_yr
     target_reduc <- input$target_reduc
@@ -815,6 +867,7 @@ shinyServer(function(input, output, session) {
   })
 
   output$tab_title_top_down <- renderText({
+    if (debugging) message("output$tab_title_top_down")
     title <- str_c("Top-down predictions of future growth rates for ",
                    input$country)
     td <- top_down_trends()
@@ -825,6 +878,7 @@ shinyServer(function(input, output, session) {
   })
 
   output$fuel_dist <- renderText({
+    if (debugging) message("output$fuel_dist")
     if(is.null(fuel_dist())) {
        mix_title <- paste0("Energy mix for ", input$country, " is not available.")
     } else {
@@ -834,6 +888,7 @@ shinyServer(function(input, output, session) {
   })
 
   output$fuel_dist_table <- renderUI({
+    if (debugging) message("output$fuel_dist_table")
     df <- fuel_dist()
     if (is.null(df)) {
       NULL
@@ -854,6 +909,7 @@ shinyServer(function(input, output, session) {
   })
 
   output$fuel_dist_plot <- renderPlot({
+    if (debugging) message("output$fuel_dist_plot")
     fd <- fuel_dist()
     if (is.null(fd)) {
       NULL
@@ -865,8 +921,9 @@ shinyServer(function(input, output, session) {
       arrange(fuel) %>% select(fuel, label) %>%
       spread(key = fuel, value = label) %>% unlist()
     if (FALSE) {
-      message(paste0(levels(fd$fuel), collapse=", "))
+      if (debugging) message(paste0(levels(fd$fuel), collapse=", "))
     }
+    if (debugging) message("In output$fuel_dist_plot, fd is a ", str_c(class(fd), collapse = ", "))
     ggplot(fd, aes(ymin = qmin, ymax = qmax, fill = fuel)) +
       geom_rect(xmin = 2, xmax = 4) +
       coord_polar(theta = "y") +
@@ -883,17 +940,21 @@ shinyServer(function(input, output, session) {
 
 
   output$target_emissions <- renderText({
+    if (debugging) message("output$target_emissions")
     target = prt(target_emissions(), 3, format = 'fg')
     ref = prt(ref_emissions(), 3, format = 'fg')
-    paste0(
+    x <- paste0(
       as.character(h4(paste0(input$ref_yr, ' emissions = ', ref, ' MMT CO2'))),
       as.character(h4(paste0(input$target_yr, ' target: ',
                       abs(input$target_reduc), '% ',
                       ifelse(input$target_reduc >= 0, 'below', 'above'),
                       ' ', input$ref_yr, ' = ', target, ' MMT'))))
+    if (debugging) message("finished output$target_emissions")
+    x
   })
 
   kaya_subset_plot <- reactive({
+    if (debugging) message("kaya_subset_plot")
     ks <- kaya_subset()
     tsy <- input$trend_start_year
     before <- ks %>% filter(year <= tsy) %>% mutate(in.trend = FALSE)
@@ -903,6 +964,7 @@ shinyServer(function(input, output, session) {
   })
 
   trend_tooltip <- function(x) {
+    if (debugging) message("trend_tooltip")
     if (is.null(x)) return(NULL)
     if (is.null(x$id)) return(NULL)
     k <- isolate(kaya_subset_plot())
@@ -914,8 +976,9 @@ shinyServer(function(input, output, session) {
   }
 
   decarb_tooltip <- function(x) {
+    if (debugging) message("decarb_tooltip")
     if (FALSE) {
-      message("decarb_tooltip: x = ", paste(names(x), " = ", x, collapse = ', '))
+      if (debugging) message("decarb_tooltip: x = ", paste(names(x), " = ", x, collapse = ', '))
     }
     if (is.null(x)) return(NULL)
     if (is.null(x$id)) return(NULL)
@@ -929,6 +992,7 @@ shinyServer(function(input, output, session) {
 
 
   tp <- reactive({
+    if (debugging) message("tp")
     xvar_name <- 'Year'
     v <- input$trend_variable
     yvar_name <- with(kaya_labels[kaya_labels$variable == v,], paste0(variable, ' (', unit, ')'))
@@ -937,7 +1001,9 @@ shinyServer(function(input, output, session) {
       x_tics <- NULL
     else
       x_tics <- seq(10 * round(history_start() / 10), 10 * round(history_stop() / 10), 10)
-    plot <- kaya_subset_plot %>%
+    ksp <- kaya_subset_plot()
+    if (debugging) message("In tp, ksp is a ", str_c(class(ksp), collapse = ", "))
+    plot <- ksp %>%
       ggvis(x = ~year, y = yvar) %>%
       group_by(f.in.trend) %>%
       layer_lines(strokeWidth := 2, stroke = ~f.in.trend) %>%
@@ -952,12 +1018,14 @@ shinyServer(function(input, output, session) {
       add_axis("y", title = as.character(yvar_name)) %>%
       scale_nominal("stroke", range = c('#FF8080', '#A00000')) %>%
       scale_nominal("fill", range = c('#FF8080', '#A00000')) %>%
-      hide_legend() %>%
+      hide_legend(scales = c("stroke", "fill")) %>%
       set_options(width="auto", height="auto", resizable = FALSE)
+    if (debugging) message("finished tp")
     plot
   })
 
   trend_model <- reactive({
+    if (debugging) message("trend_model")
     var <- input$trend_variable
     ty <- input$trend_start_year
     k <- kaya_subset() %>% filter(year >= ty)
@@ -975,57 +1043,88 @@ shinyServer(function(input, output, session) {
   tp %>% bind_shiny("trend_plot", session = session)
 
   tpl <- reactive({
+    if (debugging) message("tpl")
     xvar_name <- 'Year'
     v <- input$trend_variable
     yvar_name <- with(kaya_labels[kaya_labels$variable == v,], paste0('ln(', variable, ')'))
-    yvar <- prop("y", substitute(log(x), list(x = as.symbol(input$trend_variable))))
+    # tv <- sym(input$trend_variable)
+    # yvar <- expr(log(!!tv))
+    # if (is.na(history_start()))
+    #   x_tics <- NULL
+    # else
+    #   x_tics <- seq(10 * round(history_start() / 10), 10 * round(history_stop() / 10), 10)
+    # tsy <- input$trend_start_year
+    # ksp <- kaya_subset_plot()
+    # if (debugging) message("In tpl, ksp is a ", str_c(class(ksp), collapse = ", "),
+    #                        " with columns ", str_c(names(ksp), collapse = ", "),
+    #                        " and yvar = ", yvar,
+    #                        " yvar is a ", str_c(class(yvar), collapse = ", "))
+    #
+    # # plot <- ksp %>%
+    # #   mutate(in.trend = year >= tsy, f.in.trend = factor(in.trend)) %>%
+    # # plot <- ggplot(ksp, aes(x = year, y = !!yvar, color = f.in.trend)) +
+    # plot <- ggplot(ksp, aes(x = year, y = P)) +
+    # geom_point(size = 15, na.rm = TRUE) + geom_line(size = 1, na.rm = TRUE)
+    # message("started plot")
+    # plot <- plot +
+    #   geom_smooth(method = "lm", data = filter(kaya_subset_plot, year >= tsy),
+    #               na.rm = TRUE, fill = NA) +
+    #   scale_color_manual(values = c("#FF8080", "A00000"), guide = "none") +
+    #   theme_bw()
+    # message("finished plot")
+    #
+    #   # geom_plotly(plot, tooltip = c("x", "y"))
+
+    tsy <- input$trend_start_year
+    yvar <- prop("y", as.symbol(input$trend_variable))
     if (is.na(history_start()))
       x_tics <- NULL
     else
       x_tics <- seq(10 * round(history_start() / 10), 10 * round(history_stop() / 10), 10)
-    tsy <- input$trend_start_year
-    plot <- kaya_subset_plot %>%
-      #      mutate(in.trend = year >= tsy, f.in.trend = factor(in.trend)) %>%
-      ggplot(aes(x = year, y = (!!yvar), color = f.in.trend)) +
-      geom_point(size = 15, na.rm = TRUE) + geom_line(size = 1, na.rm = TRUE) +
-      geom_smooth(method = "lm", data = filter(kaya_subset_plot, year >= tsy),
-                  na.rm = TRUE, fill = NA) +
-      scale_color_manual(values = c("#FF8080", "A00000"), guide = "none") +
-      theme_bw()
+    ksp <- kaya_subset_plot()
+    if (debugging) message("In tpl, ksp is a ", str_c(class(ksp), collapse = ", "),
+                           " with columns ", str_c(names(ksp), collapse = ", "),
+                           " and yvar = ", yvar,
+                           " yvar is a ", str_c(class(yvar), collapse = ", "))
 
-      geom_plotly(plot, tooltip = c("x", "y"))
+    plot <- ksp %>%
+      ggvis(x = ~year, y = yvar) %>%
+      group_by(f.in.trend) %>%
+      layer_lines(strokeWidth := 2, stroke = ~f.in.trend) %>%
+      ungroup() %>%
+      layer_points(size := 15, size.hover := 50,
+                   fillOpacity := 1, fillOpacity.hover := 1,
+                   fill = ~f.in.trend, stroke = ~f.in.trend,
+                   key := ~id) %>%
+      filter(year >= tsy) %>%
+      layer_model_predictions(model = "lm") %>%
+      add_tooltip(trend_tooltip, "hover") %>%
+      add_axis("x", title = xvar_name, format="4d",
+               values = x_tics) %>%
+      add_axis("y", title = as.character(yvar_name)) %>%
+      scale_nominal("stroke", range = c('#FF8080', '#A00000')) %>%
+      scale_nominal("fill", range = c('#FF8080', '#A00000')) %>%
+      hide_legend(scales = c("stroke", "fill")) %>%
+      set_options(width="auto", height="auto", resizable = FALSE)
 
-    # ggvis(x = ~year, y = yvar) %>%
-    # group_by(f.in.trend) %>%
-    # layer_lines(strokeWidth := 2, stroke = ~f.in.trend) %>%
-    # ungroup() %>%
-    # layer_points(size := 15, size.hover := 50,
-    #              fillOpacity := 1, fillOpacity.hover := 1,
-    #              fill = ~f.in.trend, stroke = ~f.in.trend,
-    #              key := ~id) %>%
-    # filter(year >= tsy) %>%
-    # layer_model_predictions(model = "lm") %>%
-    # add_tooltip(trend_tooltip, "hover") %>%
-    # add_axis("x", title = xvar_name, format="4d",
-    #          values = x_tics) %>%
-    # add_axis("y", title = as.character(yvar_name)) %>%
-    # scale_nominal("stroke", range = c('#FF8080', '#A00000')) %>%
-    # scale_nominal("fill", range = c('#FF8080', '#A00000')) %>%
-    # hide_legend(c('stroke', 'fill')) %>%
-    # set_options(width="auto", height="auto", resizable = FALSE)
+    if (debugging) message("finished tpl")
+    plot
   })
 
   tpl %>% bind_shiny("trend_plot_ln", session = session)
 
   output$trend_plot_ln_title <- renderText({
+    if (debugging) message("output$trend_plot_ln_title")
     paste0('ln(', kaya_labels$long[kaya_labels$variable == input$trend_variable], ')')
   })
 
   output$trend_plot_title <- renderText({
+    if (debugging) message("output$trend_plot_title")
     kaya_labels$long[kaya_labels$variable == input$trend_variable]
   })
 
   decarb_plot <- reactive({
+    if (debugging) message("decarb_plot")
     # message("Starting decarb_plot")
     xvar_name <- 'Year'
     yvar_name <- 'CO2 intensity (tonnes / $ million GDP)'
@@ -1037,8 +1136,10 @@ shinyServer(function(input, output, session) {
       x_tics <- seq(10 * round(history_start() / 10),
                     10 * round(input$target_yr / 10), 10)
     }
-    message("Setting up implied decarbonization plot")
-    plot <- implied_decarb() %>%
+    if (debugging) message("Setting up implied decarbonization plot")
+    idc <- implied_decarb()
+    if (debugging) message("idc is a ", str_c(class(idc), collapse = ", "))
+    plot <- idc %>%
       ggvis(x = ~year, y = ~ef) %>%
       group_by(cat) %>%
       layer_lines(strokeWidth := 2, stroke = ~cat) %>%
@@ -1056,7 +1157,7 @@ shinyServer(function(input, output, session) {
                     domain = c("Historical", "Historical Trend", "Bottom-up"),
                     label = NA) %>%
       set_options(width="auto", height="auto", resizable = FALSE)
-    message("plot created")
+    if (debugging) message("plot created")
     plot
   })
 
