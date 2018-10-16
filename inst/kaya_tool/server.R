@@ -120,9 +120,9 @@ message("Top-down data loaded")
 energy_by_fuel <- load_energy_by_fuel()
 message("Fuel mixes loaded")
 
-kaya_countries <- as.character(unique(kaya$country))
-td_countries <- as.character(unique(top_down$country)) %>% keep(~.x %in% kaya_countries)
-ebf_countries <- as.character(unique(energy_by_fuel$country)) %>% keep(~.x %in% kaya_countries)
+kaya_regions <- as.character(unique(kaya$region))
+td_regions <- as.character(unique(top_down$region)) %>% keep(~.x %in% kaya_regions)
+ebf_regions <- as.character(unique(energy_by_fuel$region)) %>% keep(~.x %in% kaya_regions)
 
 kaya_labels <- data.frame(
   variable = c('P','G','E','F','g','e', 'f', 'ef'),
@@ -156,48 +156,48 @@ add_units <- function(variables) {
 }
 
 shinyServer(function(input, output, session) {
-  countries <- reactive({
-    if (debugging) message("countries")
-    c_list <- kaya_countries
-    if (input$tabs == 'Top Down') { c_list <- td_countries} else
-      if (input$tabs == 'Energy Mix') { c_list <- ebf_countries }
+  regions <- reactive({
+    if (debugging) message("regions")
+    c_list <- kaya_regions
+    if (input$tabs == 'Top Down') { c_list <- td_regions} else
+      if (input$tabs == 'Energy Mix') { c_list <- ebf_regions }
     c_list
   })
 
-  observeEvent(input$country, {
-    if (debugging) message("Changing country #1")
-    ctry <- input$country
-    if (is.null(ctry)) {
-      if (debugging) message("Setting NULL country")
-      ctry <- 'World'
-    } else if (ctry == '') {
-      if (debugging) message('Setting empty country')
-      ctry <- 'World'
+  observeEvent(input$region, {
+    if (debugging) message("Changing region #1")
+    rgn <- input$region
+    if (is.null(rgn)) {
+      if (debugging) message("Setting NULL region")
+      rgn <- 'World'
+    } else if (rgn == '') {
+      if (debugging) message('Setting empty region')
+      rgn <- 'World'
     }
-    if (debugging) message("Setting country to ", ctry)
-    updateSelectInput(session, 'country', choices = countries(), selected = ctry)
+    if (debugging) message("Setting region to ", rgn)
+    updateSelectInput(session, 'region', choices = regions(), selected = rgn)
   })
 
-  kaya_subset <- eventReactive(input$country, {
+  kaya_subset <- eventReactive(input$region, {
     if (debugging) message("kaya_subset")
-    ctry <- input$country
-    if (! ctry %in% kaya_countries)
-      ctry <- 'World'
-    if (debugging) message("Calculating subset for ", ctry)
-    ks <- kaya  %>% filter(country == ctry) %>% arrange(year)
+    rgn <- input$region
+    if (! rgn %in% kaya_regions)
+      rgn <- 'World'
+    if (debugging) message("Calculating subset for ", rgn)
+    ks <- kaya  %>% filter(region == rgn) %>% arrange(year)
     ks
   })
 
-  observeEvent(input$country, {
-    if (debugging) message("Changing country #2")
-    if (input$country %in% td_countries) {
+  observeEvent(input$region, {
+    if (debugging) message("Changing region #2")
+    if (input$region %in% td_regions) {
       if (debugging) message("enabling top down")
       js$enableTab("Top Down")
     } else {
       if (debugging) message("disabling top down")
       js$disableTab("Top Down")
     }
-    if (input$country %in% ebf_countries) {
+    if (input$region %in% ebf_regions) {
       if (debugging) message("enabling energy mix")
       js$enableTab("Energy Mix")
     } else {
@@ -205,7 +205,7 @@ shinyServer(function(input, output, session) {
       js$disableTab("Energy Mix")
     }
     if ("calc_show_answers" %in% names(input)) {
-      if (input$country == "World") {
+      if (input$region == "World") {
         if (debugging) message("enabling answers")
         shinyjs::enable("calc_show_answers")
         updateCheckboxInput(session, "calc_show_answers", value = FALSE)
@@ -219,7 +219,7 @@ shinyServer(function(input, output, session) {
 
   last_event_time <- eventReactive( any(input$target_yr, input$target_reduc,
                                         input$ref_yr, input$trend_start_year,
-                                        input$country),
+                                        input$region),
                  {
                    proc.time()['elapsed']
                  })
@@ -307,9 +307,9 @@ shinyServer(function(input, output, session) {
   top_down_trends <- reactive({
     if (debugging) message("top_down_trends")
     td <- top_down
-    td <- td %>% dplyr::filter(country == input$country) %>%
+    td <- td %>% dplyr::filter(region == input$region) %>%
       mutate(g = G - P, e = E - G, f = F - E) %>%
-      gather(key = variable, value = growth.rate, -country) %>%
+      gather(key = variable, value = growth.rate, -region) %>%
       mutate(growth.rate = growth.rate * 0.01)
     if (nrow(td) == 0) {
       td  <- data.frame(variable = vars, growth.rate = NA)
@@ -319,7 +319,7 @@ shinyServer(function(input, output, session) {
 
   fuel_dist <- reactive({
     if (debugging) message("fuel_dist")
-    fd <- energy_by_fuel %>% filter(country == input$country)
+    fd <- energy_by_fuel %>% filter(region == input$region)
     if (nrow(fd) == 0) {
       fd <- NULL
     } else {
@@ -455,17 +455,17 @@ shinyServer(function(input, output, session) {
 
   output$downloadData <- downloadHandler(
     filename = function() {
-      input$country %>% str_replace_all('[^A-Za-z0-9]+', '_') %>%str_c('.csv')
+      input$region %>% str_replace_all('[^A-Za-z0-9]+', '_') %>%str_c('.csv')
       },
     content = function(file) {
       write_csv(
-        kaya_subset() %>% select(-country, -geography, -id),
+        kaya_subset() %>% select(-region, -geography, -id),
         path = file)
     })
 
   output$downloadFuelData <- downloadHandler(
     filename = function() {
-      input$country %>% str_replace_all('[^A-Za-z0-9]+', '_') %>% str_c('_fuel.csv')
+      input$region %>% str_replace_all('[^A-Za-z0-9]+', '_') %>% str_c('_fuel.csv')
     },
     content = function(file) {
       df <- fuel_dist() %>% mutate(quads = round(quads, 2), pct = round(pct, 2)) %>%
@@ -503,22 +503,22 @@ shinyServer(function(input, output, session) {
 
   output$tab_title_trend <- renderText({
     if (debugging) message("output$tab_title_trend")
-    paste("Historical Trends for", input$country)
+    paste("Historical Trends for", input$region)
   })
 
   output$tab_title_calc <- renderText({
     if (debugging) message("output$tab_title_calc")
-    paste("Calcuating Implied Decarbonization for", input$country)
+    paste("Calcuating Implied Decarbonization for", input$region)
   })
 
   output$tab_title_decarb <- renderText({
     if (debugging) message("output$tab_title_decarb")
-    paste("Implied Decarbonization for", input$country)
+    paste("Implied Decarbonization for", input$region)
   })
 
   output$tab_title_fuel_dist <- renderText({
     if (debugging) message("output$tab_title_fuel_dist")
-    x <- paste0("Energy Mix for ", input$country)
+    x <- paste0("Energy Mix for ", input$region)
     if (! is.null(fuel_dist())) {
       x <- paste0(x, " in ", fuel_dist()$year[1])
     } else {
@@ -529,7 +529,7 @@ shinyServer(function(input, output, session) {
 
   output$tab_title_historical <- renderText({
     if (debugging) message("output$tab_title_historical")
-    paste("Historical Data for", input$country)
+    paste("Historical Data for", input$region)
   })
 
 
@@ -869,7 +869,7 @@ shinyServer(function(input, output, session) {
   output$tab_title_top_down <- renderText({
     if (debugging) message("output$tab_title_top_down")
     title <- str_c("Top-down predictions of future growth rates for ",
-                   input$country)
+                   input$region)
     td <- top_down_trends()
     if (is.null(td)) {
       title <- str_c(title, " are not available.")
@@ -880,9 +880,9 @@ shinyServer(function(input, output, session) {
   output$fuel_dist <- renderText({
     if (debugging) message("output$fuel_dist")
     if(is.null(fuel_dist())) {
-       mix_title <- paste0("Energy mix for ", input$country, " is not available.")
+       mix_title <- paste0("Energy mix for ", input$region, " is not available.")
     } else {
-    mix_title <- paste0("Energy mix for ", input$country, " (quads), in ", fuel_dist()$year[[1]])
+    mix_title <- paste0("Energy mix for ", input$region, " (quads), in ", fuel_dist()$year[[1]])
     }
     mix_title
   })

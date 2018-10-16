@@ -52,7 +52,7 @@ shinyUI(fluidPage(
   # Sidebar with a slider input for number of bins
   sidebarLayout(
     sidebarPanel(
-      selectInput('country', "Country", choices = NULL),
+      selectInput('region', "Country/Region", choices = NULL),
       numericInput('target_yr', 'Target year', step = 1, value = 2050),
       numericInput('target_reduc', 'Emissions reduction (%)', max=100,
                    value = 80),

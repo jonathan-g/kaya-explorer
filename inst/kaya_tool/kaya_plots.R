@@ -3,9 +3,9 @@ library(tidyverse)
 library(lazyeval)
 
 
-kaya_plot <- function(kaya, countries, v, y_lab = NULL) {
+kaya_plot <- function(kaya, regions, v, y_lab = NULL) {
   message("Kaya Plot: kaya is a ", str_c(class(kaya), collapse = ", "),
-          " and countries = ", str_c(as.list(countries), collapse = ", "),
+          " and regions = ", str_c(as.list(regions), collapse = ", "),
           " and variable = ", v)
   labels <- c(P =  'Population (billions)',
               G =  'Gross Domestic Product ($ trillion)',
@@ -19,22 +19,22 @@ kaya_plot <- function(kaya, countries, v, y_lab = NULL) {
 
   if (is.null(y_lab)) y_lab <- labels[v]
 
-  countries = as.list(countries)
+  regions = as.list(regions)
 
-  .dots = interp(~(country %in% countries & !is.na(v)), v = as.name(v))
+  .dots = interp(~(region %in% regions & !is.na(v)), v = as.name(v))
   data <- kaya %>% filter_(.dots = .dots)
 
-  if (length(countries) > 1) {
+  if (length(regions) > 1) {
     color_scale <- scale_color_brewer(palette = "Dark2")
-    legend = guides(color = guide_legend(title = "Country"),
-                    shape = guide_legend(title = "Country"))
+    legend = guides(color = guide_legend(title = "Country/Region"),
+                    shape = guide_legend(title = "Country/Region"))
   } else {
     color_scale = scale_color_manual(values = "dark blue")
     legend = guides(color = FALSE, shape = FALSE)
   }
 
   if (debugging) message("In kaya_plot, data is a ", str_c(class(data), collapse = ", "))
-  p <- ggplot(data, aes_string(x = "year", y = v, shape = "country", color = "country"))
+  p <- ggplot(data, aes_string(x = "year", y = v, shape = "region", color = "region"))
   p + geom_point(size = 3) + geom_line(size = 1) +
     color_scale +
     legend +
