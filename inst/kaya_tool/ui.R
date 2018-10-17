@@ -10,6 +10,7 @@ library(shiny)
 library(shinyjs)
 library(DT)
 library(ggvis)
+library(plotly)
 
 enable_answers <- FALSE
 enable_topdown <- FALSE
@@ -103,7 +104,7 @@ shinyUI(fluidPage(
                                     span(h4(strong(textOutput('trend_plot_title'))),
                                          style="text-align:center;"),
                                     div(
-                                      ggvisOutput('trend_plot')
+                                      plotlyOutput('trend_plot')
                                     )
                              )
                            )

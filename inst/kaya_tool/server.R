@@ -6,7 +6,7 @@
 
 library(shiny)
 library(tidyverse)
-# library(plotly)
+library(plotly)
 library(ggvis)
 library(stringr)
 library(flextable)
@@ -18,7 +18,7 @@ library(DT)
 source('load_kaya.R')
 # source('energy_by_fuel.R')
 
-debugging = FALSE
+debugging = TRUE
 
 goodness_of_fit <- function(r.squared) {
   gof <- NA
@@ -992,37 +992,52 @@ shinyServer(function(input, output, session) {
   }
 
 
-  tp <- reactive({
+  output$trend_plot <- renderPlotly({
     if (debugging) message("tp")
     xvar_name <- 'Year'
     v <- input$trend_variable
     yvar_name <- with(kaya_labels[kaya_labels$variable == v,], paste0(variable, ' (', unit, ')'))
-    yvar <- prop("y", as.symbol(input$trend_variable))
+    # yvar <- prop("y", as.symbol(input$trend_variable))
+    yvar = sym(input$trend_variable)
     if (is.na(history_start()))
-      x_tics <- NULL
+      x_tics <- waiver()
     else
       x_tics <- seq(10 * round(history_start() / 10), 10 * round(history_stop() / 10), 10)
     ksp <- kaya_subset_plot()
     if (debugging) message("In tp, ksp is a ", str_c(class(ksp), collapse = ", "))
     plot <- ksp %>%
-      ggvis(x = ~year, y = yvar) %>%
-      group_by(f.in.trend) %>%
-      layer_lines(strokeWidth := 2, stroke = ~f.in.trend) %>%
-      ungroup() %>%
-      layer_points(size := 15, size.hover := 50,
-                   fillOpacity := 1, fillOpacity.hover := 1,
-                   fill = ~f.in.trend, stroke = ~f.in.trend,
-                   key := ~id) %>%
-      add_tooltip(trend_tooltip, "hover") %>%
-      add_axis("x", title = xvar_name, format="4d",
-               values = x_tics) %>%
-      add_axis("y", title = as.character(yvar_name)) %>%
-      scale_nominal("stroke", range = c('#FF8080', '#A00000')) %>%
-      scale_nominal("fill", range = c('#FF8080', '#A00000')) %>%
-      hide_legend(scales = c("stroke", "fill")) %>%
-      set_options(width="auto", height="auto", resizable = FALSE)
+      ggplot(aes(x = year, y = !!yvar, color = f.in.trend)) +
+      geom_line(width = 1) +
+      geom_point(size = 1) +
+      scale_x_continuous(name = xvar_name,
+                         breaks = x_tics) +
+      scale_y_continuous(name = yvar_name) +
+      scale_color_manual(values = c("TRUE" = "#A00000", "FALSE" = "#FF8080"),
+                         guide = "none") +
+      scale_fill_manual(values = c("TRUE" = "#A00000", "FALSE" = "#FF8080"),
+                         guide = "none") +
+      theme_bw() +
+      theme(legend.position = "none")
+
+
+      # ggvis(x = ~year, y = yvar) %>%
+      # group_by(f.in.trend) %>%
+      # layer_lines(strokeWidth := 2, stroke = ~f.in.trend) %>%
+      # ungroup() %>%
+      # layer_points(size := 15, size.hover := 50,
+      #              fillOpacity := 1, fillOpacity.hover := 1,
+      #              fill = ~f.in.trend, stroke = ~f.in.trend,
+      #              key := ~id) %>%
+      # add_tooltip(trend_tooltip, "hover") %>%
+      # add_axis("x", title = xvar_name, format="4d",
+      #          values = x_tics) %>%
+      # add_axis("y", title = as.character(yvar_name)) %>%
+      # scale_nominal("stroke", range = c('#FF8080', '#A00000')) %>%
+      # scale_nominal("fill", range = c('#FF8080', '#A00000')) %>%
+      # hide_legend(scales = c("stroke", "fill")) %>%
+      # set_options(width="auto", height="auto", resizable = FALSE)
     if (debugging) message("finished tp")
-    plot
+    ggplotly(plot) %>% plotly::layout(autosize=TRUE)
   })
 
   trend_model <- reactive({
@@ -1040,8 +1055,6 @@ shinyServer(function(input, output, session) {
     }
     trend
   })
-
-  tp %>% bind_shiny("trend_plot", session = session)
 
   tpl <- reactive({
     if (debugging) message("tpl")
@@ -1105,7 +1118,7 @@ shinyServer(function(input, output, session) {
       add_axis("y", title = as.character(yvar_name)) %>%
       scale_nominal("stroke", range = c('#FF8080', '#A00000')) %>%
       scale_nominal("fill", range = c('#FF8080', '#A00000')) %>%
-      hide_legend(scales = c("stroke", "fill")) %>%
+      ggvis::hide_legend(scales = c("stroke", "fill")) %>%
       set_options(width="auto", height="auto", resizable = FALSE)
 
     if (debugging) message("finished tpl")
