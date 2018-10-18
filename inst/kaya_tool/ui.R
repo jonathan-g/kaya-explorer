@@ -97,14 +97,14 @@ shinyUI(fluidPage(
                                     span(h4(strong(textOutput('trend_plot_ln_title'))),
                                          style="text-align:center;"),
                                     div(
-                                      ggvisOutput('trend_plot_ln')
+                                      plotlyOutput('trend_plot_ln', height="100%")
                                     )
                              ),
                              column(6,
                                     span(h4(strong(textOutput('trend_plot_title'))),
                                          style="text-align:center;"),
                                     div(
-                                      plotlyOutput('trend_plot')
+                                      plotlyOutput('trend_plot', height="100%")
                                     )
                              )
                            )
@@ -136,7 +136,7 @@ shinyUI(fluidPage(
                   tabPanel("Implied Decarbonization",
                            h3(textOutput('tab_title_decarb')),
                            div(
-                             ggvisOutput('implied_decarb_plot')
+                             plotlyOutput('implied_decarb_plot', height="100%")
                            )
                   ),
                   # tabPanel("Top Down",

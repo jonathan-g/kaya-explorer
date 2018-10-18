@@ -960,7 +960,7 @@ shinyServer(function(input, output, session) {
     tsy <- input$trend_start_year
     before <- ks %>% filter(year <= tsy) %>% mutate(in.trend = FALSE)
     after <- ks %>% filter(year >= tsy) %>% mutate(in.trend = TRUE)
-    bind_rows(before, after) %>% mutate(f.in.trend = factor(in.trend),
+    bind_rows(before, after) %>% mutate(fitted = ordered(in.trend, levels = c("FALSE", "TRUE", "Best line")),
                                         id = row_number())
   })
 
@@ -997,45 +997,28 @@ shinyServer(function(input, output, session) {
     xvar_name <- 'Year'
     v <- input$trend_variable
     yvar_name <- with(kaya_labels[kaya_labels$variable == v,], paste0(variable, ' (', unit, ')'))
-    # yvar <- prop("y", as.symbol(input$trend_variable))
-    yvar = sym(input$trend_variable)
+    yvar = sym(v)
     if (is.na(history_start()))
       x_tics <- waiver()
     else
       x_tics <- seq(10 * round(history_start() / 10), 10 * round(history_stop() / 10), 10)
     ksp <- kaya_subset_plot()
-    if (debugging) message("In tp, ksp is a ", str_c(class(ksp), collapse = ", "))
+    # if (debugging) message("In tp, ksp is a ", str_c(class(ksp), collapse = ", "))
+
     plot <- ksp %>%
-      ggplot(aes(x = year, y = !!yvar, color = f.in.trend)) +
-      geom_line(width = 1) +
+      ggplot(aes(x = year, y = !!yvar, color = fitted)) +
+      geom_line(size = 0.25) +
       geom_point(size = 1) +
       scale_x_continuous(name = xvar_name,
                          breaks = x_tics) +
       scale_y_continuous(name = yvar_name) +
-      scale_color_manual(values = c("TRUE" = "#A00000", "FALSE" = "#FF8080"),
+      scale_color_manual(values = c("TRUE" = "#A00000", "FALSE" = "#FF8080", "Best line" = "dark blue"),
                          guide = "none") +
-      scale_fill_manual(values = c("TRUE" = "#A00000", "FALSE" = "#FF8080"),
+      scale_fill_manual(values = c("TRUE" = "#A00000", "FALSE" = "#FF8080", "Best line" = "dark blue"),
                          guide = "none") +
       theme_bw() +
       theme(legend.position = "none")
 
-
-      # ggvis(x = ~year, y = yvar) %>%
-      # group_by(f.in.trend) %>%
-      # layer_lines(strokeWidth := 2, stroke = ~f.in.trend) %>%
-      # ungroup() %>%
-      # layer_points(size := 15, size.hover := 50,
-      #              fillOpacity := 1, fillOpacity.hover := 1,
-      #              fill = ~f.in.trend, stroke = ~f.in.trend,
-      #              key := ~id) %>%
-      # add_tooltip(trend_tooltip, "hover") %>%
-      # add_axis("x", title = xvar_name, format="4d",
-      #          values = x_tics) %>%
-      # add_axis("y", title = as.character(yvar_name)) %>%
-      # scale_nominal("stroke", range = c('#FF8080', '#A00000')) %>%
-      # scale_nominal("fill", range = c('#FF8080', '#A00000')) %>%
-      # hide_legend(scales = c("stroke", "fill")) %>%
-      # set_options(width="auto", height="auto", resizable = FALSE)
     if (debugging) message("finished tp")
     ggplotly(plot) %>% plotly::layout(autosize=TRUE)
   })
@@ -1056,80 +1039,39 @@ shinyServer(function(input, output, session) {
     trend
   })
 
-  tpl <- reactive({
+  output$trend_plot_ln <- renderPlotly({
     if (debugging) message("tpl")
     xvar_name <- 'Year'
     v <- input$trend_variable
-    yvar_name <- with(kaya_labels[kaya_labels$variable == v,], paste0('ln(', variable, ')'))
-    # tv <- sym(input$trend_variable)
-    # yvar <- expr(log(!!tv))
-    # if (is.na(history_start()))
-    #   x_tics <- NULL
-    # else
-    #   x_tics <- seq(10 * round(history_start() / 10), 10 * round(history_stop() / 10), 10)
-    # tsy <- input$trend_start_year
-    # ksp <- kaya_subset_plot()
-    # if (debugging) message("In tpl, ksp is a ", str_c(class(ksp), collapse = ", "),
-    #                        " with columns ", str_c(names(ksp), collapse = ", "),
-    #                        " and yvar = ", yvar,
-    #                        " yvar is a ", str_c(class(yvar), collapse = ", "))
-    #
-    # # plot <- ksp %>%
-    # #   mutate(in.trend = year >= tsy, f.in.trend = factor(in.trend)) %>%
-    # # plot <- ggplot(ksp, aes(x = year, y = !!yvar, color = f.in.trend)) +
-    # plot <- ggplot(ksp, aes(x = year, y = P)) +
-    # geom_point(size = 15, na.rm = TRUE) + geom_line(size = 1, na.rm = TRUE)
-    # message("started plot")
-    # plot <- plot +
-    #   geom_smooth(method = "lm", data = filter(kaya_subset_plot, year >= tsy),
-    #               na.rm = TRUE, fill = NA) +
-    #   scale_color_manual(values = c("#FF8080", "A00000"), guide = "none") +
-    #   theme_bw()
-    # message("finished plot")
-    #
-    #   # geom_plotly(plot, tooltip = c("x", "y"))
+    yvar_name <- with(kaya_labels[kaya_labels$variable == v,], paste0(variable, ' (', unit, ')'))
+    yvar = sym(input$trend_variable)
 
-    tsy <- input$trend_start_year
-    yvar <- prop("y", as.symbol(input$trend_variable))
     if (is.na(history_start()))
-      x_tics <- NULL
+      x_tics <- waiver()
     else
       x_tics <- seq(10 * round(history_start() / 10), 10 * round(history_stop() / 10), 10)
+    tsy <- input$trend_start_year
+
     ksp <- kaya_subset_plot()
-    if (debugging) message("In tpl, ksp is a ", str_c(class(ksp), collapse = ", "),
-                           " with columns ", str_c(names(ksp), collapse = ", "),
-                           " and yvar = ", yvar,
-                           " yvar is a ", str_c(class(yvar), collapse = ", "))
+    if (debugging) message("In tpl, ksp is a ", str_c(class(ksp), collapse = ", "))
 
     plot <- ksp %>%
-      ggvis(x = ~year, y = yvar) %>%
-      group_by(f.in.trend) %>%
-      layer_lines(strokeWidth := 2, stroke = ~f.in.trend) %>%
-      ungroup() %>%
-      layer_points(size := 15, size.hover := 50,
-                   fillOpacity := 1, fillOpacity.hover := 1,
-                   fill = ~f.in.trend, stroke = ~f.in.trend,
-                   key := ~id) %>%
-      filter(year >= tsy) %>%
-      layer_model_predictions(model = "lm") %>%
-      add_tooltip(trend_tooltip, "hover") %>%
-      add_axis("x", title = xvar_name, format="4d",
-               values = x_tics) %>%
-      add_axis("y", title = as.character(yvar_name)) %>%
-      scale_nominal("stroke", range = c('#FF8080', '#A00000')) %>%
-      scale_nominal("fill", range = c('#FF8080', '#A00000')) %>%
-      ggvis::hide_legend(scales = c("stroke", "fill")) %>%
-      set_options(width="auto", height="auto", resizable = FALSE)
+      ggplot(aes(x = year, y = !!yvar, color = fitted)) +
+      geom_line(size = 0.25) +
+      geom_smooth(aes(color = "Best line"), method = "lm", se = FALSE, size = 0.25) +
+      geom_point(size = 1) +
+      scale_x_continuous(name = xvar_name,
+                         breaks = x_tics) +
+      scale_y_log10(name = yvar_name) +
+      scale_color_manual(values = c("TRUE" = "#A00000", "FALSE" = "#FF8080", "Best line" = "dark blue"),
+                         guide = "none") +
+      scale_fill_manual(values = c("TRUE" = "#A00000", "FALSE" = "#FF8080", "Best line" = "dark blue"),
+                        guide = "none") +
+      theme_bw() +
+      theme(legend.position = "none")
 
     if (debugging) message("finished tpl")
-    plot
-  })
-
-  tpl %>% bind_shiny("trend_plot_ln", session = session)
-
-  output$trend_plot_ln_title <- renderText({
-    if (debugging) message("output$trend_plot_ln_title")
-    paste0('ln(', kaya_labels$long[kaya_labels$variable == input$trend_variable], ')')
+    ggplotly(plot) %>% plotly::layout(autosize=TRUE)
   })
 
   output$trend_plot_title <- renderText({
@@ -1137,14 +1079,18 @@ shinyServer(function(input, output, session) {
     kaya_labels$long[kaya_labels$variable == input$trend_variable]
   })
 
-  decarb_plot <- reactive({
-    if (debugging) message("decarb_plot")
-    # message("Starting decarb_plot")
+  output$trend_plot_ln_title <- renderText({
+    if (debugging) message("output$trend_plot_ln_title")
+    paste0('ln(', kaya_labels$long[kaya_labels$variable == input$trend_variable], ')')
+  })
+
+  output$implied_decarb_plot <- renderPlotly({
+    if (debugging) message("implied_decarb_plot")
     xvar_name <- 'Year'
     yvar_name <- 'CO2 intensity (tonnes / $ million GDP)'
 
     if (is.na(history_start())) {
-      x_tics <- NULL
+      x_tics <- waiver()
     }
     else {
       x_tics <- seq(10 * round(history_start() / 10),
@@ -1153,28 +1099,39 @@ shinyServer(function(input, output, session) {
     if (debugging) message("Setting up implied decarbonization plot")
     idc <- implied_decarb()
     if (debugging) message("idc is a ", str_c(class(idc), collapse = ", "))
-    plot <- idc %>% filter(! is.na(ef), year >= 1980) %>%
-      ggvis(x = ~year, y = ~ef) %>%
-      group_by(cat) %>%
-      layer_lines(strokeWidth := 2, stroke = ~cat) %>%
-      ungroup() %>%
-      layer_points(size := 6, stroke = ~cat, fill = ~cat, key := ~id) %>%
-      add_tooltip(decarb_tooltip, "hover") %>%
-      add_axis("x", title = xvar_name, format="4d") %>%
-      scale_numeric("x", nice=TRUE) %>%
-      add_axis("y", title = yvar_name) %>%
-      scale_numeric("y", nice=FALSE, zero=TRUE) %>%
-      scale_nominal("stroke", range = brewer.pal(3, "Dark2")[c(2,3,1)], sort = FALSE,
-                    domain = c("Historical", "Historical Trend", "Bottom-up"),
-                               label = NA) %>%
-      scale_nominal("fill", range = brewer.pal(3, "Dark2")[c(2,3,1)], sort = FALSE,
-                    domain = c("Historical", "Historical Trend", "Bottom-up"),
-                    label = NA) %>%
-      set_options(width="auto", height="auto", resizable = FALSE)
-    if (debugging) message("plot created")
-    plot
-  })
 
-  decarb_plot %>% bind_shiny("implied_decarb_plot", session = session)
+    # plot <- idc %>% filter(! is.na(ef), year >= 1980) %>%
+    #   ggvis(x = ~year, y = ~ef) %>%
+    #   group_by(cat) %>%
+    #   layer_lines(strokeWidth := 2, stroke = ~cat) %>%
+    #   ungroup() %>%
+    #   layer_points(size := 6, stroke = ~cat, fill = ~cat, key := ~id) %>%
+    #   add_tooltip(decarb_tooltip, "hover") %>%
+    #   add_axis("x", title = xvar_name, format="4d") %>%
+    #   scale_numeric("x", nice=TRUE) %>%
+    #   add_axis("y", title = yvar_name) %>%
+    #   scale_numeric("y", nice=FALSE, zero=TRUE) %>%
+    #   scale_nominal("stroke", range = brewer.pal(3, "Dark2")[c(2,3,1)], sort = FALSE,
+    #                 domain = c("Historical", "Historical Trend", "Bottom-up"),
+    #                            label = NA) %>%
+    #   scale_nominal("fill", range = brewer.pal(3, "Dark2")[c(2,3,1)], sort = FALSE,
+    #                 domain = c("Historical", "Historical Trend", "Bottom-up"),
+    #                 label = NA) %>%
+    #   set_options(width="auto", height="auto", resizable = FALSE)
+
+    plot <- idc %>%
+      mutate(cat = ordered(cat, levels = c("Historical", "Historical Trend",
+                                           "Bottom-up"))) %>%
+      filter(! is.na(ef), year >= 1980) %>%
+      ggplot(aes(x = year, y = ef, color = cat)) +
+      geom_line(size = 0.5) +
+      geom_point(size = 1) +
+      scale_x_continuous(name = xvar_name, breaks = x_tics) +
+      scale_y_continuous(name = yvar_name) +
+      scale_color_brewer(palette = "Dark2") +
+      theme_bw()
+    if (debugging) message("implied_decarb_plot created")
+    ggplotly(plot) %>% plotly::layout(autosize=TRUE)
+  })
 
 })
