@@ -30,7 +30,7 @@ Imports:
   shinyjs,
   tidyverse,
   V8,
-  kayadata (>= 0.3.3)
+  kayadata (>= 0.3.4)
 Remotes:
   jonathan-g/kayadata
 Encoding: UTF-8
