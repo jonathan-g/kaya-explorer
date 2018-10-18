@@ -7,7 +7,6 @@
 library(shiny)
 library(tidyverse)
 library(plotly)
-library(ggvis)
 library(stringr)
 library(flextable)
 library(officer)
@@ -319,25 +318,26 @@ shinyServer(function(input, output, session) {
 
   fuel_dist <- reactive({
     if (debugging) message("fuel_dist")
-    fd <- energy_by_fuel %>% filter(region == input$region)
-    if (nrow(fd) == 0) {
+    df <- energy_by_fuel %>% filter(region == input$region)
+    if (nrow(df) == 0) {
       fd <- NULL
     } else {
-      if (current_year() %in% fd$year) {
+      if (current_year() %in% df$year) {
         y <- current_year()
-      } else if (current_year() > max(fd$year)) {
-        y <- max(fd$year)
-      } else if (current_year() < min(fd$year)) {
-        y <- min(fd$year)
+      } else if (current_year() > max(df$year)) {
+        y <- max(df$year)
+      } else if (current_year() < min(df$year)) {
+        y <- min(df$year)
       } else {
-        error("Cannot figure out year for current year = ", current_year(), " and fd range = (",
-              paste0(range(fd$year), collapse = ', '), ")")
+        error("Cannot figure out year for current year = ", current_year(), " and df range = (",
+              paste0(range(df$year), collapse = ', '), ")")
       }
-      fd <- fd %>% filter(year == y) %>%
+      df <- df %>% filter(year == y) %>%
         mutate(fuel = fct_recode(fuel, Renewables = "Hydro")) %>%
         group_by(fuel) %>% summarize(quads = sum(quads), pct = sum(pct)) %>% ungroup()
+      fd <- list(year = y, df = df)
     }
-    if (debugging) message(print(fd))
+    if (debugging) message(print(df))
     invisible(fd)
   })
 
@@ -468,7 +468,8 @@ shinyServer(function(input, output, session) {
       input$region %>% str_replace_all('[^A-Za-z0-9]+', '_') %>% str_c('_fuel.csv')
     },
     content = function(file) {
-      df <- fuel_dist() %>% mutate(quads = round(quads, 2), pct = round(pct, 2)) %>%
+      fd <- fuel_dist()
+      df <- fd$df %>% mutate(quads = round(quads, 2), pct = round(pct, 2)) %>%
         dplyr::select(Fuel = fuel, Quads = quads, Percent = pct) %>%
         arrange(Fuel)
       df_total = summarize(df, Fuel = 'Total', Quads = sum(Quads), Percent = sum(Percent))
@@ -519,8 +520,9 @@ shinyServer(function(input, output, session) {
   output$tab_title_fuel_dist <- renderText({
     if (debugging) message("output$tab_title_fuel_dist")
     x <- paste0("Energy Mix for ", input$region)
-    if (! is.null(fuel_dist())) {
-      x <- paste0(x, " in ", fuel_dist()$year[1])
+    fd <- fuel_dist()
+    if (! is.null(fd)) {
+      x <- paste0(x, " in ", fd$year[1])
     } else {
       x <- paste0(x, " is not available")
     }
@@ -879,21 +881,22 @@ shinyServer(function(input, output, session) {
 
   output$fuel_dist <- renderText({
     if (debugging) message("output$fuel_dist")
-    if(is.null(fuel_dist())) {
+    fd <- fuel_dist()
+    if(is.null(fd)) {
        mix_title <- paste0("Energy mix for ", input$region, " is not available.")
     } else {
-    mix_title <- paste0("Energy mix for ", input$region, " (quads), in ", fuel_dist()$year[[1]])
+    mix_title <- paste0("Energy mix for ", input$region, " (quads), in ", fd$year)
     }
     mix_title
   })
 
   output$fuel_dist_table <- renderUI({
     if (debugging) message("output$fuel_dist_table")
-    df <- fuel_dist()
-    if (is.null(df)) {
+    fd <- fuel_dist()
+    if (is.null(fd)) {
       NULL
     } else {
-      df <- df %>% mutate(quads = round(quads, 2), pct = round(pct, 1)) %>%
+      df <- fd$df %>% mutate(quads = round(quads, 2), pct = round(pct, 1)) %>%
         dplyr::select(fuel, quads, pct) %>%
         arrange(fuel)
       df_total = summarize(df, fuel = 'Total', quads = sum(quads), pct = sum(pct))
@@ -914,17 +917,17 @@ shinyServer(function(input, output, session) {
     if (is.null(fd)) {
       NULL
     } else {
-    fd <- fd %>%
+    df <- fd$df %>%
       arrange(fuel) %>%
       mutate(qmin = cumsum(lag(quads, default=0)), qmax = cumsum(quads))
-    labels <- fd %>% mutate(label = str_c(fuel, ": ", prt(quads,2), " quads (", prt(pct,1), "%)")) %>%
+    labels <- df %>% mutate(label = str_c(fuel, ": ", prt(quads,2), " quads (", prt(pct,1), "%)")) %>%
       arrange(fuel) %>% select(fuel, label) %>%
       spread(key = fuel, value = label) %>% unlist()
     if (FALSE) {
-      if (debugging) message(paste0(levels(fd$fuel), collapse=", "))
+      if (debugging) message(paste0(levels(df$fuel), collapse=", "))
     }
-    if (debugging) message("In output$fuel_dist_plot, fd is a ", str_c(class(fd), collapse = ", "))
-    ggplot(fd, aes(ymin = qmin, ymax = qmax, fill = fuel)) +
+    if (debugging) message("In output$fuel_dist_plot, df is a ", str_c(class(df), collapse = ", "))
+    ggplot(df, aes(ymin = qmin, ymax = qmax, fill = fuel)) +
       geom_rect(xmin = 2, xmax = 4) +
       coord_polar(theta = "y") +
       xlim(c(0,4)) +
@@ -1099,25 +1102,6 @@ shinyServer(function(input, output, session) {
     if (debugging) message("Setting up implied decarbonization plot")
     idc <- implied_decarb()
     if (debugging) message("idc is a ", str_c(class(idc), collapse = ", "))
-
-    # plot <- idc %>% filter(! is.na(ef), year >= 1980) %>%
-    #   ggvis(x = ~year, y = ~ef) %>%
-    #   group_by(cat) %>%
-    #   layer_lines(strokeWidth := 2, stroke = ~cat) %>%
-    #   ungroup() %>%
-    #   layer_points(size := 6, stroke = ~cat, fill = ~cat, key := ~id) %>%
-    #   add_tooltip(decarb_tooltip, "hover") %>%
-    #   add_axis("x", title = xvar_name, format="4d") %>%
-    #   scale_numeric("x", nice=TRUE) %>%
-    #   add_axis("y", title = yvar_name) %>%
-    #   scale_numeric("y", nice=FALSE, zero=TRUE) %>%
-    #   scale_nominal("stroke", range = brewer.pal(3, "Dark2")[c(2,3,1)], sort = FALSE,
-    #                 domain = c("Historical", "Historical Trend", "Bottom-up"),
-    #                            label = NA) %>%
-    #   scale_nominal("fill", range = brewer.pal(3, "Dark2")[c(2,3,1)], sort = FALSE,
-    #                 domain = c("Historical", "Historical Trend", "Bottom-up"),
-    #                 label = NA) %>%
-    #   set_options(width="auto", height="auto", resizable = FALSE)
 
     plot <- idc %>%
       mutate(cat = ordered(cat, levels = c("Historical", "Historical Trend",
