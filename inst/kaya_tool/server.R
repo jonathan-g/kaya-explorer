@@ -1062,7 +1062,8 @@ shinyServer(function(input, output, session) {
     plot <- ksp %>%
       ggplot(aes(x = year, y = !!yvar, color = fitted)) +
       geom_line(size = 0.25) +
-      geom_smooth(aes(color = "Best line"), method = "lm", se = FALSE, size = 0.25) +
+      geom_smooth(aes(color = "Best line"), data = filter(ksp, year >= tsy),
+                  method = "lm", se = FALSE, size = 0.25) +
       geom_point(size = 1) +
       scale_x_continuous(name = xvar_name,
                          breaks = x_tics) +
