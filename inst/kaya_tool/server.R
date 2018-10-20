@@ -107,7 +107,8 @@ theme_kaya <- function(x, answer = FALSE) {
   x
 }
 
-kaya <- load_kaya() %>% mutate(F = c.to.co2(F), f = c.to.co2(f), ef = c.to.co2(ef))
+# kaya <- load_kaya() %>% mutate(F = c.to.co2(F), f = c.to.co2(f), ef = c.to.co2(ef))
+kaya <- load_kaya()
 message("Kaya data loaded")
 
 kaya$id <- seq_len(nrow(kaya))

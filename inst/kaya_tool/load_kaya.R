@@ -44,7 +44,8 @@ export_kaya <- function(kaya, region) {
   x <- region
   data <- kaya %>% filter(region == x) %>%
     select(Year = year, P,G,E,F) %>%
-    mutate(P = P * 1E+6, G = G * 1E+6, F = F * 44 / 12)
+#    mutate(P = P * 1E+6, G = G * 1E+6, F = F * 44 / 12)
+    mutate(P = P * 1E+6, G = G * 1E+6)
   filename <- paste(gsub(" +", "_", region), '.csv')
   write_csv(data, file = filename)
 }
