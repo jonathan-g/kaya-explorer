@@ -36,6 +36,11 @@
 #' @name kayatool-package
 #'
 #' @import shiny
-#' @import tidyverse
+#' @import dplyr
+#' @import tidyr
+#' @import stringr
+#' @importFrom magrittr "%>%" "%$%"
+#' @import ggplot2
+#' @import purrr
 #'
 NULL

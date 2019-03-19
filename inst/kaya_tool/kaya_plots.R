@@ -1,7 +1,7 @@
+library(dplyr)
+library(ggplot2)
 library(magrittr)
-library(tidyverse)
-library(lazyeval)
-
+library(stringr)
 
 kaya_plot <- function(kaya, regions, v, y_lab = NULL) {
   message("Kaya Plot: kaya is a ", str_c(class(kaya), collapse = ", "),
@@ -21,8 +21,7 @@ kaya_plot <- function(kaya, regions, v, y_lab = NULL) {
 
   regions = as.list(regions)
 
-  .dots = interp(~(region %in% regions & !is.na(v)), v = as.name(v))
-  data <- kaya %>% filter_(.dots = .dots)
+  data <- kaya %>% filter_(region %in% regions, !is.na(!!sym(v)))
 
   if (length(regions) > 1) {
     color_scale <- scale_color_brewer(palette = "Dark2")
@@ -34,7 +33,7 @@ kaya_plot <- function(kaya, regions, v, y_lab = NULL) {
   }
 
   if (debugging) message("In kaya_plot, data is a ", str_c(class(data), collapse = ", "))
-  p <- ggplot(data, aes_string(x = "year", y = v, shape = "region", color = "region"))
+  p <- ggplot(data, aes(x = year, y = !!(sym(v)), shape = region, color = region))
   p + geom_point(size = 3) + geom_line(size = 1) +
     color_scale +
     legend +

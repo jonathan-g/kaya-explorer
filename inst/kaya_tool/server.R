@@ -5,9 +5,12 @@
 #
 
 library(shiny)
-library(tidyverse)
-library(plotly)
+library(dplyr)
+library(tidyr)
+library(purrr)
 library(stringr)
+library(magrittr)
+library(plotly)
 library(flextable)
 library(officer)
 library(broom)
@@ -17,7 +20,7 @@ library(DT)
 source('load_kaya.R')
 # source('energy_by_fuel.R')
 
-debugging = TRUE
+debugging = FALSE
 
 goodness_of_fit <- function(r.squared) {
   gof <- NA
@@ -289,16 +292,19 @@ shinyServer(function(input, output, session) {
     ks <- kaya_subset() %>% filter(year >= trend.start)
     vars <- c('P','g', 'e', 'f', 'ef', 'G', 'E', 'F')
     if (nrow(ks) > 0) {
-      t <- lapply(vars,
-                  function(v) {
-                    f <- substitute(log(x) ~ year, list(x = as.symbol(v)))
-                    mdl <- lm(f, data = ks, na.action = na.exclude)
-                    r.squared = mdl %>% glance() %>%
-                      select(adj.r.squared) %>% unlist()
-                    growth = mdl %>% tidy() %>% filter(term == 'year') %>%
-                      select(estimate) %>% unlist()
-                    tibble(variable = v, growth.rate = growth, r.squared = r.squared)
-                  }) %>% bind_rows()
+      t <- map_df(vars,
+                  function(.x) {
+                    if (debugging) message("Fitting trend to ", .x, ": vars = ",
+                                           str_c(names(ks), collapse = ", "))
+                    fmla <- rlang::new_quosure(expr(log(!!(sym(.x))) ~ year))
+                    if (debugging) message("Formula = ", as.character(fmla))
+                    mdl <- lm(fmla, data = ks, na.action = na.exclude)
+                    if (debugging) message("Done fitting trend.")
+                    r_sq <- mdl %>% glance() %$% adj.r.squared
+                    growth <- mdl %>% tidy %>% filter(term == "year") %$% estimate
+                    if (debugging) message("Estracted r.squared and rate.")
+                    tibble(variable = .x, growth.rate = growth, r.squared = r_sq)
+                  })
     } else {
       t <- data.frame(variable = vars, growth.rate = NA, r.squared = NA)
     }
@@ -335,7 +341,7 @@ shinyServer(function(input, output, session) {
       }
       df <- df %>% filter(year == y) %>%
         mutate(fuel = fct_recode(fuel, Renewables = "Hydro")) %>%
-        group_by(fuel) %>% summarize(quads = sum(quads), pct = sum(pct)) %>% ungroup()
+        group_by(fuel) %>% summarize(quads = sum(quads), frac = sum(frac)) %>% ungroup()
       fd <- list(year = y, df = df)
     }
     if (debugging) message(print(df))
@@ -346,8 +352,10 @@ shinyServer(function(input, output, session) {
     if (debugging) message("forecast")
     t <- trends() %>% mutate(variable = ordered(variable, levels = variable))
     current_yr <- current_year()
+    if (debugging)
+      message("t$variable = ", str_c('"', t$variable, '"', collapse = ", "))
     ks <- kaya_subset() %>% filter(year == current_yr) %>%
-      select_(.dots = as.character(t$variable)) %>%
+      select(!!!(syms(as.character(t$variable)))) %>%
       gather(key = variable, value = current)
     t <- merge(t, ks)
     t <- mutate(t, projected = current * exp((input$target_yr - current_yr) * growth.rate)) %>%
@@ -361,7 +369,7 @@ shinyServer(function(input, output, session) {
     t <- top_down_trends() %>% mutate(variable = ordered(variable, levels = variable))
     current_yr <- current_year()
     ks <- kaya_subset() %>% filter(year == current_yr) %>%
-      select_(.dots = as.character(t$variable)) %>%
+      select(!!!(syms(t$variable))) %>%
       gather(key = variable, value = current)
     t <- merge(t, ks) %>%
       mutate(projected = current * exp((input$target_yr - current_yr) * growth.rate)) %>%
@@ -407,14 +415,24 @@ shinyServer(function(input, output, session) {
 
     mdl <- lm(log(ef) ~ year, data = filter(ks, year >= input$trend_start_year))
 
-    extrap <- data.frame(year = seq(history_start(), target_yr), cat = "Historical Trend")
-    extrap$ef <- exp(predict(mdl, newdata = extrap))
+    extrap <- tibble(year = seq(history_start(), target_yr),
+                     ef = exp(predict(mdl, newdata = tibble(year = year))),
+                     cat = "Historical Trend")
 
-    bottom_up <- data.frame(year = seq(current_yr, target_yr))
-    bottom_up <- bottom_up %>% mutate( ef = current_ef * exp(rate * (year - current_yr)),
-              cat = 'Bottom-up')
+    bottom_up <- tibble(year = seq(current_yr, target_yr),
+                        ef = current_ef * exp(rate * (year - current_yr)),
+                        cat = 'Bottom-up')
 
-    ks <- bind_rows(ks, extrap, bottom_up) %>% mutate(id = row_number())
+    if (debugging) {
+      message("ks has: ", str_c(names(ks), collapse = ", "),
+            ", with types ", str_c(map_chr(ks, typeof), collapse = ", "))
+      message("extrap has: ", str_c(names(extrap), collapse = ", "),
+              ", with types ", str_c(map_chr(extrap, typeof), collapse = ", "))
+      message("bottom_up has: ", str_c(names(bottom_up), collapse = ", "),
+              ", with types ", str_c(map_chr(bottom_up, typeof), collapse = ", "))
+    }
+      ks <- ks %>%
+      bind_rows(extrap, bottom_up) %>% mutate(id = row_number())
     ks
   })
 
@@ -470,12 +488,12 @@ shinyServer(function(input, output, session) {
     },
     content = function(file) {
       fd <- fuel_dist()
-      df <- fd$df %>% mutate(quads = round(quads, 2), pct = round(pct, 2)) %>%
+      df <- fd$df %>% mutate(quads = round(quads, 2), pct = round(frac * 100, 2)) %>%
         dplyr::select(Fuel = fuel, Quads = quads, Percent = pct) %>%
         arrange(Fuel)
       df_total = summarize(df, Fuel = 'Total', Quads = sum(Quads), Percent = sum(Percent))
 
-      df <- df %>% bind_rows(df_total)
+      df <- df %>% mutate(fuel = as.character(fuel)) %>% bind_rows(df_total)
       if (debugging) message("df has ", nrow(df), " rows")
       if (debugging) message("file = ", file)
       write_csv(df, path = file)
@@ -897,17 +915,23 @@ shinyServer(function(input, output, session) {
     if (is.null(fd)) {
       NULL
     } else {
-      df <- fd$df %>% mutate(quads = round(quads, 2), pct = round(pct, 1)) %>%
+      df <- fd$df %>% mutate(quads = round(quads, 2), pct = round(100 * frac, 2)) %>%
         dplyr::select(fuel, quads, pct) %>%
         arrange(fuel)
-      df_total = summarize(df, fuel = 'Total', quads = sum(quads), pct = sum(pct))
+
+      df_total <- summarize(df, fuel = 'Total', quads = sum(quads), pct = sum(pct))
+
+      df <- df %>% mutate(fuel = as.character(fuel)) %>% bind_rows(df_total)
 
       ft <- flextable(df) %>%
         autofit() %>%
-        set_header_labels(fuel = "Fuel", quads = "Quads", pct = "%") %>%
+        set_header_labels(fuel = "Fuel", quads = "Quads", pct = "Percent") %>%
         theme_kaya() %>%
+        align(part = "header", align = "center") %>%
         align(part = "body", align = "right") %>%
-        align(part = "body", align = "center", j = 1) %>%
+        align(part = "body", align = "left", j = 1) %>%
+        colformat_num("quads", big.mark = ",", digits = 2) %>%
+        colformat_num("pct", digits = 2, suffix = "%") %>%
       htmltools_value()
     }
   })
@@ -921,7 +945,7 @@ shinyServer(function(input, output, session) {
     df <- fd$df %>%
       arrange(fuel) %>%
       mutate(qmin = cumsum(lag(quads, default=0)), qmax = cumsum(quads))
-    labels <- df %>% mutate(label = str_c(fuel, ": ", prt(quads,2), " quads (", prt(pct,1), "%)")) %>%
+    labels <- df %>% mutate(label = str_c(fuel, ": ", prt(quads,2), " quads (", prt(frac * 100,1), "%)")) %>%
       arrange(fuel) %>% select(fuel, label) %>%
       spread(key = fuel, value = label) %>% unlist()
     if (FALSE) {
@@ -964,8 +988,9 @@ shinyServer(function(input, output, session) {
     tsy <- input$trend_start_year
     before <- ks %>% filter(year <= tsy) %>% mutate(in.trend = FALSE)
     after <- ks %>% filter(year >= tsy) %>% mutate(in.trend = TRUE)
-    bind_rows(before, after) %>% mutate(fitted = ordered(in.trend, levels = c("FALSE", "TRUE", "Best line")),
-                                        id = row_number())
+    bind_rows(before, after) %>%
+      mutate(fitted = ordered(in.trend, levels = c("FALSE", "TRUE", "Best line")),
+             id = row_number())
   })
 
   trend_tooltip <- function(x) {
