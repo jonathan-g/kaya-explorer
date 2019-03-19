@@ -1,3 +1,7 @@
+# kayatool 0.4.0
+
+Updated to work with kayadata library version >= 0.4.0
+
 # kayatool 0.3.3
 
 Updated to use kayadata library.
