@@ -5,7 +5,10 @@ output:
 ---
 
 ```{r license, echo=FALSE, eval=TRUE, message = FALSE, warning=FALSE}
-library(tidyverse)
+library(readr)
+library(dplyr)
+library(tidyr)
+library(purrr)
 license <- read_delim('LICENSE', delim = ':',
                       col_names= c('key', 'value'), 
                       col_types = cols(key = col_character(),

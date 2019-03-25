@@ -4,18 +4,19 @@
 # http://shiny.rstudio.com
 #
 
-library(shiny)
+library(broom)
 library(dplyr)
-library(tidyr)
-library(purrr)
-library(stringr)
+library(forcats)
 library(magrittr)
-library(plotly)
+library(purrr)
+library(RColorBrewer)
+library(stringr)
+library(tidyr)
+library(shiny)
+library(DT)
 library(flextable)
 library(officer)
-library(broom)
-library(RColorBrewer)
-library(DT)
+library(plotly)
 
 source('load_kaya.R')
 # source('energy_by_fuel.R')

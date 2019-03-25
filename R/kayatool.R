@@ -37,10 +37,11 @@
 #'
 #' @import shiny
 #' @import dplyr
-#' @import tidyr
-#' @import stringr
-#' @importFrom magrittr "%>%" "%$%"
+#' @import forcats
 #' @import ggplot2
 #' @import purrr
+#' @import stringr
+#' @import tidyr
+#' @importFrom magrittr "%>%" "%$%"
 #'
 NULL
