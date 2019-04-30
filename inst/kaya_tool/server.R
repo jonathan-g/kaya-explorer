@@ -493,7 +493,7 @@ shinyServer(function(input, output, session) {
         arrange(Fuel)
       df_total = summarize(df, Fuel = 'Total', Quads = sum(Quads), Percent = sum(Percent))
 
-      df <- df %>% mutate(fuel = as.character(fuel)) %>% bind_rows(df_total)
+      df <- df %>% mutate(Fuel = as.character(Fuel)) %>% bind_rows(df_total)
       if (debugging) message("df has ", nrow(df), " rows")
       if (debugging) message("file = ", file)
       write_csv(df, path = file)
