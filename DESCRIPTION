@@ -26,6 +26,7 @@ Imports:
   ggplot2 (>= 3.1),
   janitor (>= 1.1),
   magrittr  (>= 1.5),
+  forcats (>= 0.4),
   plotly (>= 4.8),
   purrr (>= 0.3),
   RColorBrewer (>= 1.1),

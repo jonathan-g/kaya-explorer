@@ -16,6 +16,7 @@ library(officer)
 library(broom)
 library(RColorBrewer)
 library(DT)
+library(forcats)
 
 source('load_kaya.R')
 # source('energy_by_fuel.R')
