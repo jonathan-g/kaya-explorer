@@ -2,7 +2,7 @@ kayatool
 ========
 
 **GitHub:** [![Build
-Status](https://travis-ci.org/gilligan-ees-3310/kayatool.svg?branch=master)](https://github.com/gilligan-ees-3310/kayatool/commits/master)
+Status](https://travis-ci.org/jonathan-g/kayatool.svg?branch=master)](https://github.com/jonathan-g/kayatool/commits/master)
 
 **GitLab:** [![Build
 Status](https://gitlab.jgilligan.org/gilligan_teaching/ees_3310/ees_3310_software/kayatool/badges/master/build.svg)](https://gitlab.jgilligan.org/gilligan_teaching/ees_3310/ees_3310_software/kayatool/commits/master)
