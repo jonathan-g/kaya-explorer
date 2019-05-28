@@ -1,8 +1,8 @@
 Package: kayatool
 Type: Package
 Title: Interactive Explorer for Kaya Identity
-Version: 0.4.0
-Date: 2019-03-19
+Version: 0.4.1
+Date: 2019-05-27
 Authors@R: c(person("Jonathan", "Gilligan", role = c("aut", "cre"),
                     email = "jonathan.gilligan@vanderbilt.edu"))
 Description: A Shiny-based explorer for Kaya identity. Loads data from the kayadata package and

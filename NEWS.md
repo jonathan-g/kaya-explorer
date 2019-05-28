@@ -1,3 +1,10 @@
+# kayatool 0.4.1
+
+* Add LICENCE file (different to LICENSE) to kludge licensee detecction of MIT
+  license on GitLab.
+* Update DESCRIPTION with new version number and date, and update package
+  dependencies.  Remove REMOTES dependency on GitHub version of kayadata.
+
 # kayatool 0.4.0
 
 Updated to work with kayadata library version >= 0.4.0
