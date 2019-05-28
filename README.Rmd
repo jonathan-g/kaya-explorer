@@ -5,11 +5,25 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE, cache = FALSE)
+```
+```{r get_desc, include=FALSE}
+url <- desc::desc_get_urls("DESCRIPTION")
+purl <- httr::parse_url(url)
+tpurl <- purl
+
+purl$path <- file.path(dirname(purl$path), basename(purl$path), "commits", "master", fsep = "/")
+
+tpurl$hostname <- "travis-ci.org"
+tpurl$path <- file.path(dirname(tpurl$path), paste0(basename(tpurl$path), ".svg"), fsep = "/")
+tpurl$query <- "branch=master"
+
+gh_url <- httr::build_url(purl)
+travis_url <- httr::build_url(tpurl)
 ```
 # kayatool
 
-**GitHub:** [![Build Status](https://travis-ci.org/jonathan-g/kayatool.svg?branch=master)](https://github.com/jonathan-g/kayatool/commits/master)
+**GitHub:** [![Build Status](`r travis_url`)](`r gh_url`)
 
 **GitLab:** [![Build Status](https://gitlab.jgilligan.org/gilligan_teaching/ees_3310/ees_3310_software/kayatool/badges/master/build.svg)](https://gitlab.jgilligan.org/gilligan_teaching/ees_3310/ees_3310_software/kayatool/commits/master)
 
