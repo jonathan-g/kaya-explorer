@@ -17,6 +17,7 @@ library(DT)
 library(flextable)
 library(officer)
 library(plotly)
+library(readr)
 
 source('load_kaya.R')
 # source('energy_by_fuel.R')
@@ -475,9 +476,12 @@ shinyServer(function(input, output, session) {
 
   output$downloadData <- downloadHandler(
     filename = function() {
-      input$region %>% str_replace_all('[^A-Za-z0-9]+', '_') %>%str_c('.csv')
+      f <- input$region %>% str_replace_all('[^A-Za-z0-9]+', '_') %>%str_c('.csv')
+      if (debugging) message('downloadData: filename = "', f, '"')
+      f
       },
     content = function(file) {
+      if (debugging) message('downloadData: Writing file "', file, '"')
       write_csv(
         kaya_subset() %>% select(-region, -geography, -id),
         path = file)
@@ -485,16 +489,19 @@ shinyServer(function(input, output, session) {
 
   output$downloadFuelData <- downloadHandler(
     filename = function() {
-      input$region %>% str_replace_all('[^A-Za-z0-9]+', '_') %>% str_c('_fuel.csv')
+      f <- input$region %>% str_replace_all('[^A-Za-z0-9]+', '_') %>% str_c('_fuel.csv')
+      if (debugging) message('downloadFuelData: filename = "', f, '"')
+      f
     },
     content = function(file) {
+      if (debugging) message('downloadFuelData: Writing file "', file, '"')
       fd <- fuel_dist()
       df <- fd$df %>% mutate(quads = round(quads, 2), pct = round(frac * 100, 2)) %>%
         dplyr::select(Fuel = fuel, Quads = quads, Percent = pct) %>%
         arrange(Fuel)
       df_total = summarize(df, Fuel = 'Total', Quads = sum(Quads), Percent = sum(Percent))
 
-      df <- df %>% mutate(fuel = as.character(fuel)) %>% bind_rows(df_total)
+      df <- df %>% mutate(Fuel = as.character(Fuel)) %>% bind_rows(df_total)
       if (debugging) message("df has ", nrow(df), " rows")
       if (debugging) message("file = ", file)
       write_csv(df, path = file)
