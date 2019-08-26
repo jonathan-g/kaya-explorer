@@ -247,6 +247,9 @@ shinyServer(function(input, output, session) {
                        min = ks.min.yr, max = ks.max.yr, step = 1, value = v)
   })
 
+  max_year <- max(kaya_data$year)
+  min_year <- min(kaya_data$year)
+
   current_year <- reactive({
     if (debugging) message("current_year")
     max(kaya_subset()$year, na.rm = T)
@@ -299,7 +302,7 @@ shinyServer(function(input, output, session) {
                     if (debugging) message("Fitting trend to ", .x, ": vars = ",
                                            str_c(names(ks), collapse = ", "))
                     fmla <- rlang::new_quosure(expr(log(!!(sym(.x))) ~ year))
-                    if (debugging) message("Formula = ", as.character(fmla))
+                    if (debugging) message("Formula = ", as_label(fmla))
                     mdl <- lm(fmla, data = ks, na.action = na.exclude)
                     if (debugging) message("Done fitting trend.")
                     r_sq <- mdl %>% glance() %$% adj.r.squared
@@ -356,12 +359,16 @@ shinyServer(function(input, output, session) {
     current_yr <- current_year()
     if (debugging)
       message("t$variable = ", str_c('"', t$variable, '"', collapse = ", "))
-    ks <- kaya_subset() %>% filter(year == current_yr) %>%
-      select(!!!(syms(as.character(t$variable)))) %>%
-      gather(key = variable, value = current)
-    t <- merge(t, ks)
-    t <- mutate(t, projected = current * exp((input$target_yr - current_yr) * growth.rate)) %>%
-      arrange(variable)
+    ks <- kaya_subset() %>% select(year, !!!(syms(as.character(t$variable)))) %>%
+      gather(-year, key = variable, value = current) %>%
+      filter(! is.na(current)) %>%
+      group_by(variable) %>% top_n(1, year) %>% ungroup() %>%
+      mutate(variable = ordered(variable, levels = levels(t$variable)))
+    t <- left_join(t, ks)
+    t <- mutate(t, projected = current * exp((input$target_yr - year) * growth.rate),
+                current = ifelse(year == current_yr, current,
+                                 current * exp((current_yr - year) * growth.rate))) %>%
+      arrange(variable) %>% select(-year)
     if (debugging) message("finished forecast")
     t
   })
@@ -1047,7 +1054,7 @@ shinyServer(function(input, output, session) {
       geom_line(size = 0.25) +
       geom_point(size = 1) +
       scale_x_continuous(name = xvar_name,
-                         breaks = x_tics) +
+                         breaks = x_tics, limits = c(min_year, max_year)) +
       scale_y_continuous(name = yvar_name) +
       scale_color_manual(values = c("TRUE" = "#A00000", "FALSE" = "#FF8080", "Best line" = "dark blue"),
                          guide = "none") +
@@ -1099,7 +1106,7 @@ shinyServer(function(input, output, session) {
                   method = "lm", se = FALSE, size = 0.25) +
       geom_point(size = 1) +
       scale_x_continuous(name = xvar_name,
-                         breaks = x_tics) +
+                         breaks = x_tics, limits = c(min_year, max_year)) +
       scale_y_log10(name = yvar_name) +
       scale_color_manual(values = c("TRUE" = "#A00000", "FALSE" = "#FF8080", "Best line" = "dark blue"),
                          guide = "none") +

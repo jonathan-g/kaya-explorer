@@ -1,3 +1,8 @@
+# kayatool 0.4.2
+
+* Fixed bug where an NA in the last year of the kaya_data set for a given 
+  nation would cause NA's in the projected future values of the Kaya variables.
+
 # kayatool 0.4.1
 
 * Add LICENCE file (different to LICENSE) to kludge licensee detecction of MIT
