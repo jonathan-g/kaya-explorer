@@ -46,7 +46,7 @@ shinyUI(fluidPage(
   titlePanel("Decarbonization Explorer"),
   withMathJax(),
   shinyjs::useShinyjs(),
-  shinyjs::extendShinyjs(text = jscode),
+  shinyjs::extendShinyjs(text = jscode, functions = c("disableTab", "enableTab")),
   shinyjs::inlineCSS(css),
 
   # Sidebar with a slider input for number of bins
