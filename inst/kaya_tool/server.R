@@ -938,6 +938,8 @@ shinyServer(function(input, output, session) {
 
       df <- df %>% mutate(fuel = as.character(fuel)) %>% bind_rows(df_total)
 
+      if (debugging) message("Preparing flextable")
+
       ft <- flextable(df) %>%
         autofit() %>%
         set_header_labels(fuel = "Fuel", quads = "Quads", pct = "Percent") %>%
@@ -945,9 +947,13 @@ shinyServer(function(input, output, session) {
         align(part = "header", align = "center") %>%
         align(part = "body", align = "right") %>%
         align(part = "body", align = "left", j = 1) %>%
-        colformat_num("quads", big.mark = ",", digits = 2) %>%
-        colformat_num("pct", digits = 2, suffix = "%") %>%
+        colformat_num(j = "quads", big.mark = ",", digits = 2) %>%
+        colformat_num(j = "pct", digits = 2, suffix = "%") %>%
       htmltools_value()
+
+      if (debugging) message("Finished preparing flextable")
+
+      ft
     }
   })
 

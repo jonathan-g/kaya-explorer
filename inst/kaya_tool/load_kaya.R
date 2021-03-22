@@ -15,7 +15,7 @@ translate_regions <- function(df) {
 
 filter_values <- function(df) {
   bad_regions <- df %>% group_by(region) %>%
-    summarize_at(vars(P, G, E, F), funs(sum(!is.na(.)))) %>%
+    summarize_at(vars(P, G, E, F), ~sum(!is.na(.))) %>%
     ungroup() %>% mutate(n = pmin(P, G, E, F)) %>% filter(n < 5)
   df %>% anti_join(bad_regions, by = "region")
 }
