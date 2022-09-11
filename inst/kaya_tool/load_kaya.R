@@ -29,6 +29,7 @@ load_kaya <- function() {
   data("kaya_data", package = "kayadata", envir = this_env)
   kaya_data %>% translate_regions() %>%
     filter_values() %>%
+    mutate(gef = F / (1000 * P)) %>%
     invisible()
 }
 

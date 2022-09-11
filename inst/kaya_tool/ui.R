@@ -83,7 +83,12 @@ shinyUI(fluidPage(
                            fluidRow(
                              column(2,
                                     selectInput('trend_variable', 'Variable',
-                                                choices = c('P', 'g', 'e', 'f', 'ef', 'G', 'E', 'F'),
+                                                choices = c(P = 'P', g = 'g', 
+                                                            e = 'e', f = 'f', 
+                                                            ef = 'ef', 
+                                                            'F/P' = 'gef', 
+                                                            G = 'G', E = 'E', 
+                                                            F = 'F'),
                                                 selected = 1)),
                              column(10,
                                     br(),
