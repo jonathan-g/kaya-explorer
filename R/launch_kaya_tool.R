@@ -9,6 +9,9 @@
 # You should have received a copy of the MIT License along with this program; if
 # not, see <https://opensource.org/licenses/MIT>.
 
+#' @include globals.R ui.R server.R
+NULL
+
 #' Launch the kayatool app
 #'
 #' Launch the kayatool app in the default web browser. RStudio
@@ -41,7 +44,10 @@ launch <- function(rstudio = FALSE, ...) {
   launch.browser <- if (!rstudio)
     TRUE else getOption("shiny.launch.browser", interactive())
 
-  shiny::runApp(system.file("kaya_tool", package = "kayatool"),
-                launch.browser = launch.browser, ...)
+  shiny::shinyApp(
+    ui = get("ui", envir = .shinyenv),
+    server = get("server", enir = .shinyenv),
+    options = list(launch.browser = launch.browser, ...)
+  )
   invisible()
 }

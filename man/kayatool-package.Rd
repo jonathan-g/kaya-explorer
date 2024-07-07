@@ -2,6 +2,7 @@
 % Please edit documentation in R/kayatool.R
 \docType{package}
 \name{kayatool-package}
+\alias{kayatool}
 \alias{kayatool-package}
 \title{kayatool package}
 \description{
@@ -27,3 +28,15 @@ supply their energy needs.
 }
 }
 
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://github.com/jonathan-g/kayatool/}
+  \item Report bugs at \url{https://github.com/jonathan-g/kayatool/issues/}
+}
+
+}
+\author{
+\strong{Maintainer}: Jonathan Gilligan \email{jonathan.gilligan@vanderbilt.edu}
+
+}

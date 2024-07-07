@@ -1,7 +1,4 @@
-library(magrittr)
-library(dplyr)
-library(stringr)
-library(janitor)
+#' @include globals.R
 
 
 mtoe = 1 / 25.2 # quads
@@ -14,14 +11,14 @@ translate_regions <- function(df) {
 }
 
 filter_values <- function(df) {
-  bad_regions <- df %>% group_by(region) %>%
-    summarize_at(vars(P, G, E, F), ~sum(!is.na(.))) %>%
-    ungroup() %>% mutate(n = pmin(P, G, E, F)) %>% filter(n < 5)
-  df %>% anti_join(bad_regions, by = "region")
+  bad_regions <- df %>% dplyr::group_by(region) %>%
+    dplyr::summarize_at(vars(P, G, E, F), ~sum(!is.na(.))) %>%
+    dplyr::ungroup() %>% dplyr::mutate(n = pmin(P, G, E, F)) %>% dplyr::filter(n < 5)
+  df %>% dplyr::anti_join(bad_regions, by = "region")
 }
 
 filter_trends <- function(df) {
-  df %>% filter_at(vars(P, G, E, F, g, e, f), all_vars(!is.na(.)))
+  df %>% dplyr::filter_at(vars(P, G, E, F, g, e, f), dplyr::all_vars(!is.na(.)))
 }
 
 load_kaya <- function() {
@@ -29,7 +26,7 @@ load_kaya <- function() {
   data("kaya_data", package = "kayadata", envir = this_env)
   kaya_data %>% translate_regions() %>%
     filter_values() %>%
-    mutate(gef = F / (1000 * P)) %>%
+    dplyr::mutate(gef = F / (1000 * P)) %>%
     invisible()
 }
 
@@ -43,10 +40,10 @@ load_top_down <- function() {
 
 export_kaya <- function(kaya, region) {
   x <- region
-  data <- kaya %>% filter(region == x) %>%
-    select(Year = year, P,G,E,F) %>%
-#    mutate(P = P * 1E+6, G = G * 1E+6, F = F * 44 / 12)
-    mutate(P = P * 1E+6, G = G * 1E+6)
+  data <- kaya %>% dplyr::filter(region == x) %>%
+    dplyr::select(Year = year, P,G,E,F) %>%
+#    dplyr::mutate(P = P * 1E+6, G = G * 1E+6, F = F * 44 / 12)
+    dplyr::mutate(P = P * 1E+6, G = G * 1E+6)
   filename <- paste(gsub(" +", "_", region), '.csv')
   write_csv(data, file = filename)
 }

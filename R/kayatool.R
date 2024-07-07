@@ -11,7 +11,6 @@
 
 #' @title kayatool package
 #'
-#'
 #' @description
 #'
 #' A Shiny-based explorer for Kaya identity. Loads data from the kayadata package and
@@ -32,16 +31,10 @@
 #'  \item kayatool issue tracker (\url{https://github.com/jonathan-g/kayatool/issues})
 #' }
 #'
-#' @docType package
 #' @name kayatool-package
 #'
-#' @import shiny
-#' @import dplyr
-#' @import forcats
 #' @import ggplot2
-#' @import purrr
-#' @import stringr
-#' @import tidyr
+#' @import rlang
 #' @importFrom magrittr "%>%" "%$%"
 #'
-NULL
+'_PACKAGE'

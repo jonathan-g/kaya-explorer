@@ -1,11 +1,8 @@
-library(dplyr)
-library(ggplot2)
-library(magrittr)
-library(stringr)
+#' @include globals.R
 
 kaya_plot <- function(kaya, regions, v, y_lab = NULL) {
-  message("Kaya Plot: kaya is a ", str_c(class(kaya), collapse = ", "),
-          " and regions = ", str_c(as.list(regions), collapse = ", "),
+  message("Kaya Plot: kaya is a ", stringr::str_c(class(kaya), collapse = ", "),
+          " and regions = ", stringr::str_c(as.list(regions), collapse = ", "),
           " and variable = ", v)
   labels <- c(P =  'Population (billions)',
               G =  'Gross Domestic Product ($ trillion)',
@@ -21,7 +18,7 @@ kaya_plot <- function(kaya, regions, v, y_lab = NULL) {
 
   regions = as.list(regions)
 
-  data <- kaya %>% filter_(region %in% regions, !is.na(!!sym(v)))
+  data <- kaya %>% dplyr::filter_(region %in% regions, !is.na(!!sym(v)))
 
   if (length(regions) > 1) {
     color_scale <- scale_color_brewer(palette = "Dark2")
@@ -32,7 +29,7 @@ kaya_plot <- function(kaya, regions, v, y_lab = NULL) {
     legend = guides(color = FALSE, shape = FALSE)
   }
 
-  if (debugging) message("In kaya_plot, data is a ", str_c(class(data), collapse = ", "))
+  if (debugging) message("In kaya_plot, data is a ", stringr::str_c(class(data), collapse = ", "))
   p <- ggplot(data, aes(x = year, y = !!(sym(v)), shape = region, color = region))
   p + geom_point(size = 3) + geom_line(size = 1) +
     color_scale +
