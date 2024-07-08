@@ -101,4 +101,12 @@ assign("td_trends", kayadata::td_trends, envir = .globalvars)
 assign("fuel_mix",  kayadata::fuel_mix,  envir = .globalvars)
 
 
-
+#' @export
+set_debug <- function(dbg = NULL) {
+  old_dbg <- get("debugging", envir = .globalvars)
+  if (is.null(dbg) || is.na(dbg)) {
+    dbg <- ! isTRUE(old_dbg)
+  }
+  assign("debugging", dbg, envir = .globalvars)
+  dbg
+}

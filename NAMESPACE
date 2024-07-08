@@ -3,6 +3,7 @@
 export(c_to_co2)
 export(co2_to_c)
 export(launch_kaya_tool)
+export(set_debug)
 import(ggplot2)
 import(rlang)
 importFrom(magrittr,"%$%")

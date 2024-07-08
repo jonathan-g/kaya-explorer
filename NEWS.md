@@ -1,3 +1,7 @@
+# kayatool 0.5.0
+
+* Refactored into a structure that's better suited for a CRAN package.
+
 # kayatool 0.4.2
 
 * Fixed bug where an NA in the last year of the kaya_data set for a given 

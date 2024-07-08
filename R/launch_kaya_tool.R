@@ -44,10 +44,13 @@ launch <- function(rstudio = FALSE, ...) {
   launch.browser <- if (!rstudio)
     TRUE else getOption("shiny.launch.browser", interactive())
 
-  shiny::shinyApp(
+  app <- shiny::shinyApp(
     ui = get("ui", envir = .shinyenv),
     server = get("server", envir = .shinyenv),
     options = list(launch.browser = launch.browser, ...)
   )
-  invisible()
+
+  shiny::runApp(
+    appDir = app
+    )
 }
