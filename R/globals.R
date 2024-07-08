@@ -63,3 +63,42 @@ purrr::iwalk(
   ),
   ~assign(.y, .x, envir = .globalvars)
 )
+
+assign("kaya_labels",
+       dplyr::tibble(
+         variable = c('P','G','E','F','g','e', 'f', 'ef', 'gef'),
+         varname = c('P', 'G', 'E', 'F', 'g', 'e', 'f', 'ef', 'CO2 per capita'),
+         unit = c('billion', 'trillion dollars', 'quad','MMT CO2',
+                  '$1000 per person', 'quad per $trillion', 'MMT per quad',
+                  'metric ton per $ million', 'metric ton'),
+         long.unit = c('billion people', 'trillion dollars', 'quad',
+                       'million metric tons CO2', '$1000 per person',
+                       'quad of energy per $trillion  GDP',
+                       'million metric tons CO2 per quad',
+                       'metric ton CO2 per million dollars GDP',
+                       'metric ton CO2'),
+         long.long = c('Population', 'GDP', 'Energy consumption', 'Emissions',
+                       'Per-capita GDP', 'Energy intensity of the economy',
+                       'CO2 intensity of the energy supply',
+                       'CO2 intensity of the economy', "Per-capita emissions"),
+         long = c('Population', 'GDP', 'Energy consumption', 'Emissions',
+                  'Per-capita GDP', 'Energy intensity',
+                  'CO2 intensity of energy', 'CO2 intensity of economy',
+                  "Per-capita emissions"),
+         short = c('P', 'GDP', 'Energy', 'Emissions',
+                   'Per-capita GDP', 'Energy intensity',
+                   'Carbon intensity', 'Carbon intensity of economy',
+                   'Per-capita emissions')
+       ),
+       envir = .globalvars
+)
+
+# quads per MTOE
+assign("mtoe", 1 / 25.2, envir = .globalvars)
+
+assign("kaya_data", kayadata::kaya_data, envir = .globalvars)
+assign("td_trends", kayadata::td_trends, envir = .globalvars)
+assign("fuel_mix",  kayadata::fuel_mix,  envir = .globalvars)
+
+
+

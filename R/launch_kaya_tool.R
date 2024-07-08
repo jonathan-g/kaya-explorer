@@ -46,7 +46,7 @@ launch <- function(rstudio = FALSE, ...) {
 
   shiny::shinyApp(
     ui = get("ui", envir = .shinyenv),
-    server = get("server", enir = .shinyenv),
+    server = get("server", envir = .shinyenv),
     options = list(launch.browser = launch.browser, ...)
   )
   invisible()
