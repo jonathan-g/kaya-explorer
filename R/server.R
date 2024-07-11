@@ -269,7 +269,7 @@ server <- function(input, output, session) {
     trend.start <- input$trend_start_year
     ks <- kaya_subset() %>% dplyr::filter(.data$year >= trend.start)
     vars <- c('P','g', 'e', 'f', 'ef', 'gef', 'G', 'E', 'F')
-    ks <- ks %>% mutate(across(any_of(vars),
+    ks <- ks %>% dplyr::mutate(dplyr::across(dplyr::any_of(vars),
                                ~ifelse(!is.na(.x) & .x <= 0, NA, .x)))
     if (nrow(ks) > 0) {
       t <- purrr::map_df(

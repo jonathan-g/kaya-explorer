@@ -41,7 +41,6 @@ Suggests:
 Collate:
     'kt_startup.R'
     'globals.R'
-    'kaya_plots.R'
     'kayatool.R'
     'load_kaya.R'
     'server.R'
