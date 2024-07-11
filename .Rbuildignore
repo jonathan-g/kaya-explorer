@@ -7,3 +7,4 @@
 ^README\.R?md$
 ^README-.*\.(png|jpg|jpeg|pdf)$
 ^inst/tests/.*$
+^app\.R$

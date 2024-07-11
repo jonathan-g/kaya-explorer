@@ -12,6 +12,24 @@
 #' @include globals.R ui.R server.R
 NULL
 
+
+
+#' Get a shinyApp object for the Kaya tool app
+#'
+#' Generate a shinyApp object for the Kaya tool app.
+#'
+#' @return A shinyApp object that can be run to launch the app.
+#'
+#' @export
+#'
+kaya_app <- function() {
+  app <- shiny::shinyApp(
+    ui = get("ui", envir = .shinyenv),
+    server = get("server", envir = .shinyenv),
+    options = list(launch.browser = launch.browser, ...)
+  )
+}
+
 #' Launch the kayatool app
 #'
 #' Launch the kayatool app in the default web browser. RStudio
@@ -44,11 +62,7 @@ launch <- function(rstudio = FALSE, ...) {
   launch.browser <- if (!rstudio)
     TRUE else getOption("shiny.launch.browser", interactive())
 
-  app <- shiny::shinyApp(
-    ui = get("ui", envir = .shinyenv),
-    server = get("server", envir = .shinyenv),
-    options = list(launch.browser = launch.browser, ...)
-  )
+  app <- kaya_app()
 
   shiny::runApp(
     appDir = app

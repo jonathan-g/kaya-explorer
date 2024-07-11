@@ -1,0 +1,1 @@
+kayatool::kaya_app()
