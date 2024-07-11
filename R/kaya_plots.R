@@ -32,9 +32,10 @@ kaya_plot <- function(kaya, regions, v, y_lab = NULL) {
 
   if (debugging) message("In kaya_plot, data is a ",
                          stringr::str_c(class(data), collapse = ", "))
-  p <- ggplot(data, aes(x = .data$year, y = .data[[v]], shape = .data$region,
-                        color = "region"))
-  p + geom_point(size = 3) + geom_line(size = 1) +
+  p <- ggplot(data, aes(x = .data$year, y = .data[[v]],
+                        shape = .data$region,
+                        color = .data$region))
+  p + geom_point(size = 3) + geom_line(linewidth = 1) +
     color_scale +
     legend +
     labs(x = "Year", y = y_lab) +

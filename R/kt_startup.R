@@ -1,6 +1,6 @@
 .onAttach <- function(...) {
   ver <- utils::packageVersion("kayatool")
-  msg <- paste0("\nThis is kayatool version ", ver, "\n")
+  msg <- stringr::str_c("\nThis is kayatool version ", as.character(ver), "\n")
   packageStartupMessage(msg)
 }
 
@@ -11,5 +11,8 @@
   )
   set_ops <- !(names(op.kayatool) %in% names(op))
   if (any(set_ops)) options(op.kayatool[set_ops])
+
+  setup_globals()
+
   invisible()
 }

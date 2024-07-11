@@ -17,7 +17,6 @@ NULL
 #' Launch the kayatool app in the default web browser. RStudio
 #' users also have the option of launching the app in RStudio's pop-up Viewer.
 #'
-#' @export
 #' @param rstudio Only relevant for RStudio users. The default (\code{FALSE}) is
 #'   to launch the app in the user's default web browser rather than RStudio's
 #'   pop-up Viewer. Users can change the default to \code{TRUE} by setting the
@@ -26,11 +25,12 @@ NULL
 #'
 #' @return Nothing is returned
 #'
-#'
 #' @examples
 #' \dontrun{
 #' launch_kaya_tool()
 #' }
+#'
+#' @export
 #'
 launch_kaya_tool <- function(rstudio = getOption("kayatool.rstudio"), ...) {
   message("\nLaunching kayatool interface.")

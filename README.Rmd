@@ -15,7 +15,7 @@ tpurl <- purl
 purl$path <- file.path(dirname(purl$path), basename(purl$path), "commits", "master", fsep = "/")
 
 tpurl$hostname <- "travis-ci.org"
-tpurl$path <- file.path(dirname(tpurl$path), paste0(basename(tpurl$path), ".svg"), fsep = "/")
+tpurl$path <- file.path(dirname(tpurl$path), stringr::str_c(basename(tpurl$path), ".svg"), fsep = "/")
 tpurl$query <- "branch=master"
 
 gh_url <- httr::build_url(purl)
