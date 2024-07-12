@@ -8,8 +8,6 @@ Badge](https://www.r-pkg.org/badges/version-last-release/kayaExplorer)](https://
 MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![R-CMD-check](https://github.com/jonathan-g/kaya-explorer/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/jonathan-g/kaya-explorer/actions/workflows/R-CMD-check.yaml)
 [![pkgdown](https://github.com/jonathan-g/kaya-explorer/actions/workflows/pkgdown.yaml/badge.svg)](https://github.com/jonathan-g/kaya-explorer/actions/workflows/pkgdown.yaml)
-**GitLab:** [![Build
-Status](https://gitlab.jgilligan.org/gilligan_teaching/ees_3310/ees_3310_software/kaya-explorer/badges/main/pipeline.svg)](https://gitlab.jgilligan.org/gilligan_teaching/ees_3310/ees_3310_software/kaya-explorer/commits/main)
 <!-- badges: end -->
 
 The `kayaExplorer` package is an R Shiny package to interactively
