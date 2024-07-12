@@ -9,7 +9,7 @@ MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.or
 [![R-CMD-check](https://github.com/jonathan-g/kaya-explorer/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/jonathan-g/kaya-explorer/actions/workflows/R-CMD-check.yaml)
 [![pkgdown](https://github.com/jonathan-g/kaya-explorer/actions/workflows/pkgdown.yaml/badge.svg)](https://github.com/jonathan-g/kaya-explorer/actions/workflows/pkgdown.yaml)
 **GitLab:** [![Build
-Status](https://gitlab.jgilligan.org/gilligan_teaching/ees_3310/ees_3310_software/kaya-explorer/badges/main/build.svg)](https://gitlab.jgilligan.org/gilligan_teaching/ees_3310/ees_3310_software/kaya-explorer/commits/main)
+Status](https://gitlab.jgilligan.org/gilligan_teaching/ees_3310/ees_3310_software/kaya-explorer/badges/main/pipeline.svg)](https://gitlab.jgilligan.org/gilligan_teaching/ees_3310/ees_3310_software/kaya-explorer/commits/main)
 <!-- badges: end -->
 
 The `kayaExplorer` package is an R Shiny package to interactively
@@ -67,3 +67,9 @@ See also,
     policies](https://doi.org/10.1016/j.envsci.2010.10.008),” *Environ.
     Sci. & Pol.* **14**, 20–27 (2011). doi
     [10.1016/j.envsci.2010.10.008](https://doi.org/10.1016/j.envsci.2010.10.008)
+
+## Code of conduct
+
+Please note that this project is released with a [Contributor Code of
+Conduct](https://jonathan-g.github.io/kaya-explorer/CODE_OF_CONDUCT.html).
+By participating in this project you agree to abide by its terms.
