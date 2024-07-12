@@ -1,8 +1,8 @@
-# kayatool is open-source software; you can redistribute it and/or
+# kayaExplorer is open-source software; you can redistribute it and/or
 # modify it under the terms of the MIT License as published by the Open Source
 # Initiative.
 #
-# kayatool is distributed in the hope that it will be useful, but
+# kayaExplorer is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
 # FITNESS FOR A PARTICULAR PURPOSE.  See the MIT License for more details.
 #
@@ -14,9 +14,14 @@ NULL
 
 
 
-#' Get a shinyApp object for the Kaya tool app
+#' Get a shinyApp object for the Kaya explorer app
 #'
-#' Generate a shinyApp object for the Kaya tool app.
+#' Generate a shinyApp object for the Kaya explorer app.
+#'
+#' @param launch.browser logical variable indicating whether to launch
+#'   a web browser and open the URL for the shiny app when starting the
+#'   local server.
+#' @param ... other arguments to pass to [`shinyApp`][shiny::shinyApp].
 #'
 #' @return A shinyApp object that can be run to launch the app.
 #'
@@ -30,28 +35,28 @@ kaya_app <- function(launch.browser = TRUE, ...) {
   )
 }
 
-#' Launch the kayatool app
+#' Launch the kayaExplorer app
 #'
-#' Launch the kayatool app in the default web browser. RStudio
+#' Launch the kayaExplorer app in the default web browser. RStudio
 #' users also have the option of launching the app in RStudio's pop-up Viewer.
 #'
 #' @param rstudio Only relevant for RStudio users. The default (\code{FALSE}) is
 #'   to launch the app in the user's default web browser rather than RStudio's
 #'   pop-up Viewer. Users can change the default to \code{TRUE} by setting the
-#'   global option \code{options(kayatool.rstudio = TRUE)}.
+#'   global option \code{options(kayaExplorer.rstudio = TRUE)}.
 #' @param ... Optional arguments passed to \code{\link[shiny]{runApp}}.
 #'
 #' @return Nothing is returned
 #'
 #' @examples
 #' \dontrun{
-#' launch_kaya_tool()
+#' launch_kaya_explorer()
 #' }
 #'
 #' @export
 #'
-launch_kaya_tool <- function(rstudio = getOption("kayatool.rstudio"), ...) {
-  message("\nLaunching kayatool interface.")
+launch_kaya_explorer <- function(rstudio = getOption("kayaExplorer.rstudio"), ...) {
+  message("\nLaunching kayaExplorer interface.")
   invisible(launch(rstudio, ...))
 }
 

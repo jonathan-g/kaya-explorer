@@ -1,15 +1,15 @@
-# kayatool is open-source software; you can redistribute it and/or
+# kayaExplorer is open-source software; you can redistribute it and/or
 # modify it under the terms of the MIT License as published by the Open Source
 # Initiative.
 #
-# kayatool is distributed in the hope that it will be useful, but
+# kayaExplorer is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
 # FITNESS FOR A PARTICULAR PURPOSE.  See the MIT License for more details.
 #
 # You should have received a copy of the MIT License along with this program; if
 # not, see <https://opensource.org/licenses/MIT>.
 
-#' @title kayatool package
+#' @title kayaExplorer package
 #'
 #' @description
 #'
@@ -23,15 +23,15 @@
 #'
 #' @section License:
 #'
-#'  The \pkg{kayatool} package is open source licensed under the
+#'  The \pkg{kayaExplorer} package is open source licensed under the
 #'  MIT License.
 #'
 #' @section Bug reports:
 #' \itemize{
-#'  \item kayatool issue tracker (\url{https://github.com/jonathan-g/kayatool/issues})
+#'  \item kayaExplorer issue tracker (\url{https://github.com/jonathan-g/kaya-explorer/issues})
 #' }
 #'
-#' @name kayatool-package
+#' @name kayaExplorer-package
 #'
 #' @import ggplot2
 #' @import rlang
