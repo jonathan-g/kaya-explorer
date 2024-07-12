@@ -1,16 +1,16 @@
 .onAttach <- function(...) {
-  ver <- utils::packageVersion("kayatool")
-  msg <- stringr::str_c("\nThis is kayatool version ", as.character(ver), "\n")
+  ver <- utils::packageVersion("kayaExplorer")
+  msg <- stringr::str_c("\nThis is kayaExplorer version ", as.character(ver), "\n")
   packageStartupMessage(msg)
 }
 
 .onLoad <- function(libname, pkgname) {
   op <- options()
-  op.kayatool <- list(
-    kayatool.rstudio = FALSE
+  op.kayaExplorer <- list(
+    kayaExplorer.rstudio = FALSE
   )
-  set_ops <- !(names(op.kayatool) %in% names(op))
-  if (any(set_ops)) options(op.kayatool[set_ops])
+  set_ops <- !(names(op.kayaExplorer) %in% names(op))
+  if (any(set_ops)) options(op.kayaExplorer[set_ops])
 
   setup_globals()
 

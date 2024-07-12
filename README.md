@@ -1,44 +1,51 @@
-kayatool
-========
+# kayaExplorer
 
-**GitHub:** [![Build
-Status](https://travis-ci.org/jonathan-g/kayatool.svg?branch=master)](https://github.com/jonathan-g/kayatool/commits/master)
+<!-- badges: start -->
 
-**GitLab:** [![Build
-Status](https://gitlab.jgilligan.org/gilligan_teaching/ees_3310/ees_3310_software/kayatool/badges/master/build.svg)](https://gitlab.jgilligan.org/gilligan_teaching/ees_3310/ees_3310_software/kayatool/commits/master)
+[![CRAN Status
+Badge](https://www.r-pkg.org/badges/version-last-release/kayaExplorer)](https://cran.r-project.org/package=kayaExplorer)
+[![License:
+MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![R-CMD-check](https://github.com/jonathan-g/kaya-explorer/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/jonathan-g/kaya-explorer/actions/workflows/R-CMD-check.yaml)
+[![pkgdown](https://github.com/jonathan-g/kaya-explorer/actions/workflows/pkgdown.yaml/badge.svg)](https://github.com/jonathan-g/kaya-explorer/actions/workflows/pkgdown.yaml)
+<!-- badges: end -->
 
-The `kayatool` package is an R Shiny package to interactively explore
-the Kaya identity for a number of countries and regions of the world.
+The `kayaExplorer` package is an R Shiny package to interactively
+explore the Kaya identity for a number of countries and regions of the
+world.
 
-Installation
-------------
+## Installation
+
+To install this package, you can install the latest release from CRAN:
+
+    install.packages('kayaExplorer')
 
 To install this package you can use the `devtools` package in RStudio to
 run
 
     library(devtools)
-    install_github("jonathan-g/kayatool")
+    install_github("jonathan-g/kayaExplorer")
 
 and then load the package with
 
-    library(kayatool)
+    library(kayaExplorer)
 
-or use the `pacman` package to load `kayatool`, installing it first if
-necessary:
+or use the `pacman` package to load `kayaExplorer`, installing it first
+if necessary:
 
     library(pacman)
-    p_load_current_gh("jonathan-g/kayatool")
+    p_load_current_gh("jonathan-g/kayaExplorer")
 
 Once you have loaded the package, you can launch it from RStudio with
 
-    launch_kaya_tool()
+    launch_kaya_explorer()
 
-Credits
--------
+## Credits
 
-This tool was inspired by Roger Pielke’s book, [*The Climate
+This interactive application was inspired by Roger Pielke’s book, [*The
+Climate
 Fix*](https://books.google.com/books/about/The_Climate_Fix.html?id=WgcCoYsR41IC)
-and the tool closely follows the analysis presented in chapters 3–4 of
+and the app closely follows the analysis presented in chapters 3–4 of
 that book.
 
 See also,
@@ -58,3 +65,9 @@ See also,
     policies](https://doi.org/10.1016/j.envsci.2010.10.008),” *Environ.
     Sci. & Pol.* **14**, 20–27 (2011). doi
     [10.1016/j.envsci.2010.10.008](https://doi.org/10.1016/j.envsci.2010.10.008)
+
+## Code of conduct
+
+Please note that this project is released with a [Contributor Code of
+Conduct](https://jonathan-g.github.io/kaya-explorer/CODE_OF_CONDUCT.html).
+By participating in this project you agree to abide by its terms.

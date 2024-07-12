@@ -3,7 +3,7 @@
 export(c_to_co2)
 export(co2_to_c)
 export(kaya_app)
-export(launch_kaya_tool)
+export(launch_kaya_explorer)
 export(set_debug)
 import(ggplot2)
 import(rlang)

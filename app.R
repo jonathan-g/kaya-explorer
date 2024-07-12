@@ -1,3 +1,3 @@
-app <- kayatool::kaya_app()
+app <- kayaExplorer::kaya_app()
 
 app
