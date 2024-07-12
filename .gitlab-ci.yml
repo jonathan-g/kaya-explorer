@@ -2,7 +2,7 @@ image: jgilligan/jg-shinyverse:4.4.0
 
 test:
   script:
-    - R -e "install.packages(c('DT', 'flextable', 'janitor', 'kayadata', 'officer', 'plotly', 'shiny', 'shinyjs', 'V8'))"
+    - R -e "install.packages(c('DT', 'flextable', 'janitor', 'kayadata', 'officer', 'plotly', 'shiny', 'shinyjs', 'V8', 'broom', 'rlang'))"
     - R CMD build . --no-build-vignettes --no-manual
     - PKG_FILE_NAME=$(ls -1t *.tar.gz | head -n 1)
     - R CMD check "${PKG_FILE_NAME}" --no-build-vignettes --no-manual --as-cran
