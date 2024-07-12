@@ -22,7 +22,7 @@ NULL
 #'
 #' @export
 #'
-kaya_app <- function() {
+kaya_app <- function(launch.browser = TRUE, ...) {
   app <- shiny::shinyApp(
     ui = get("ui", envir = .shinyenv),
     server = get("server", envir = .shinyenv),
@@ -62,9 +62,9 @@ launch <- function(rstudio = FALSE, ...) {
   launch.browser <- if (!rstudio)
     TRUE else getOption("shiny.launch.browser", interactive())
 
-  app <- kaya_app()
+  app <- kaya_app(launch.browser = launch.browser, ...)
 
   shiny::runApp(
     appDir = app
-    )
+  )
 }

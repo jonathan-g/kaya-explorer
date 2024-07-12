@@ -1,1 +1,3 @@
-kayatool::kaya_app()
+app <- kayatool::kaya_app()
+
+app
