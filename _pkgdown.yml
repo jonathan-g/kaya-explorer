@@ -1,0 +1,41 @@
+destination: docs
+url: https://jonathan-g.github.io/kaya-explorer
+
+home:
+  title: Kaya Identity Data for Nations and Regions
+  description: >
+    A Shiny-based explorer for Kaya identity. Loads data from the kayadata
+    package and provides an interactive shiny app for exploring the data:
+    choose a country or region and examine trends in the Kaya variables
+    (population, gross domestic product, primary energy consumption, and
+    carbon dioxide emissions), compare historical trends to the implied trends
+    necessary to hit decarbonization policy targets (e.g., 70% reduction of
+    emissions by 2050). Also allows the user to explore the fuel mix that
+    different countries and regions use to supply their energy needs.
+  strip_header: false
+
+authors:
+  Jonathan Gilligan:
+    href: https://www.jonathangilligan.org
+
+development:
+  mode: auto
+
+reference:
+  - title: Interactive Shiny app
+    desc: Interactive app to explore Kaya identity data and its implications for
+      climate policy.
+    contents:
+    - launch_kaya_explorer
+    - kaya_app
+  - title: Utility functions
+    desc: Miscellaneous utility functions
+    contents:
+    - set_debug
+    - c_to_co2
+    - co2_to_c
+  - title: internal
+    contents:
+    - kayaExplorer-package
+
+
