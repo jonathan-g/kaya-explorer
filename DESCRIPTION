@@ -18,7 +18,7 @@ BugReports: https://github.com/jonathan-g/kayatool/issues/
 Depends: 
     R (>= 4.0),
 Imports:
-    broom (>= 1.0.6),
+    broom (>= 1.0.0),
     dplyr (>= 1.1.4),
     DT (>= 0.33),
     flextable (>= 0.9.6),
@@ -30,7 +30,7 @@ Imports:
     plotly (>= 4.10.4),
     purrr (>= 1.0.2),
     readr (>= 2.1.5),
-    rlang (>= 1.1.4),
+    rlang (>= 1.1.0),
     shiny (>= 1.8.1.1),
     shinyjs (>= 2.1.0),
     stringr (>= 1.5.1),
