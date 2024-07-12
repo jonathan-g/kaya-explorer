@@ -13,7 +13,8 @@ Description: A Shiny-based explorer for Kaya identity. Loads data from the kayad
   Also allows the user to explore the fuel mix that different countries and regions use to 
   supply their energy needs.
 License: MIT + file LICENSE
-URL: https://github.com/jonathan-g/kaya-explorer/
+URL: https://github.com/jonathan-g/kaya-explorer/,
+     https://jonathan-g.github.io/kaya-explorer/
 BugReports: https://github.com/jonathan-g/kaya-explorer/issues/
 Depends: 
     R (>= 4.0),
