@@ -32,6 +32,7 @@ supply their energy needs.
 Useful links:
 \itemize{
   \item \url{https://github.com/jonathan-g/kaya-explorer/}
+  \item \url{https://jonathan-g.github.io/kaya-explorer/}
   \item Report bugs at \url{https://github.com/jonathan-g/kaya-explorer/issues/}
 }
 
